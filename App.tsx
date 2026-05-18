@@ -1,18 +1,19 @@
-import { Text, View } from "react-native";
+import { SafeAreaView, StatusBar, StyleSheet } from "react-native";
 
-import type { UserProfile } from "./src/types";
-
-const profile: UserProfile = {
-  weight: 80,
-  goal: "maintain",
-  activityLevel: "medium",
-};
+import { ProfileScreen } from "./src/features/profile/ProfileScreen";
 
 export default function App() {
   return (
-    <View>
-      <Text>Peak MVP</Text>
-      <Text>{profile.weight}</Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <ProfileScreen />
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F7FB",
+  },
+});
