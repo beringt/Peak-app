@@ -15,12 +15,16 @@ const activityLabels: Record<UserProfile["activityLevel"], string> = {
   high: "High Activity",
 };
 
-export function ProfileScreen() {
-  const [weight, setWeight] = useState("80");
-  const [goal, setGoal] = useState<UserProfile["goal"]>("maintain");
+type ProfileScreenProps = {
+  savedProfile: UserProfile | null;
+  onSave: (profile: UserProfile) => void;
+};
+
+export function ProfileScreen({ savedProfile, onSave }: ProfileScreenProps) {
+  const [weight, setWeight] = useState(String(savedProfile?.weight ?? 80));
+  const [goal, setGoal] = useState<UserProfile["goal"]>(savedProfile?.goal ?? "maintain");
   const [activityLevel, setActivityLevel] =
-    useState<UserProfile["activityLevel"]>("medium");
-  const [savedProfile, setSavedProfile] = useState<UserProfile | null>(null);
+    useState<UserProfile["activityLevel"]>(savedProfile?.activityLevel ?? "medium");
   const [errorMessage, setErrorMessage] = useState("");
   const [confirmationMessage, setConfirmationMessage] = useState("");
 
@@ -34,7 +38,7 @@ export function ProfileScreen() {
     }
 
     const profile: UserProfile = { weight: parsedWeight, goal, activityLevel };
-    setSavedProfile(profile);
+    onSave(profile);
     setErrorMessage("");
     setConfirmationMessage("Profile saved.");
   }
