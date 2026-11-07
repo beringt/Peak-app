@@ -122,3 +122,20 @@ test("invalid measurements and duplicate IDs are rejected without fabricating ev
     expect(() => calculateWeightEvidence(entries, cutoff)).toThrow(RangeError);
   }
 });
+
+
+test.each([
+  { high: 60.6, expected: "ready" },
+  { high: 60.600000001, expected: "review-needed" },
+  { high: 60.61, expected: "review-needed" },
+])("decimal 2% boundary remains strictly greater-than: high=$high", ({ high, expected }) => {
+  const entries = full(60).map(entry => ({ ...entry, weightKg: 60 }));
+  const withoutLastDay = entries.filter(entry => entry.date !== "2026-11-15");
+  withoutLastDay.push({ id: "decimal-low", date: "2026-11-15", weightKg: 59.4 },
+    { id: "decimal-high", date: "2026-11-15", weightKg: high });
+  const result = calculateWeightEvidence(withoutLastDay, cutoff);
+  expect(result.status).toBe(expected);
+  expect(result.recent.days[6].wideRange).toBe(expected === "review-needed");
+  expect(result.recent.days[6].minimumKg).toBe(59.4);
+  expect(result.recent.days[6].maximumKg).toBe(high);
+});

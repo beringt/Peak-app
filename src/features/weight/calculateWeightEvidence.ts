@@ -80,10 +80,15 @@ export function calculateWeightEvidence(entries: readonly WeightEntry[], asOfDat
       const values = group.map(entry => entry.weightKg).sort((a, b) => a - b);
       const middle = Math.floor(values.length / 2);
       const medianKg = values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
+      const rangeKg = values[values.length - 1] - values[0];
+      const thresholdKg = 0.02 * medianKg;
+      // Subtracting decimal weights can amplify representation error. Ignore only
+      // a few floating-point units at the input scale, not a measurement tolerance.
+      const roundingErrorKg = 4 * Number.EPSILON * Math.max(values[values.length - 1], thresholdKg);
       return {
         date, medianKg, recordIds: group.map(entry => entry.id).sort(),
         minimumKg: values[0], maximumKg: values[values.length - 1],
-        wideRange: values[values.length - 1] - values[0] > 0.02 * medianKg,
+        wideRange: rangeKg - thresholdKg > roundingErrorKg,
       };
     });
   const previous = windowSummary(cutoff - 14, cutoff - 8, days);
