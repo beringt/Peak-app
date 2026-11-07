@@ -1,12 +1,7 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Button, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import type { UserProfile } from "../../types";
-
-const profile: UserProfile = {
-  weight: 80,
-  goal: "maintain",
-  activityLevel: "medium",
-};
 
 const goalLabels: Record<UserProfile["goal"], string> = {
   lose: "Lose Weight",
@@ -21,33 +16,90 @@ const activityLabels: Record<UserProfile["activityLevel"], string> = {
 };
 
 export function ProfileScreen() {
+  const [weight, setWeight] = useState("80");
+  const [goal, setGoal] = useState<UserProfile["goal"]>("maintain");
+  const [activityLevel, setActivityLevel] =
+    useState<UserProfile["activityLevel"]>("medium");
+  const [savedProfile, setSavedProfile] = useState<UserProfile | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [confirmationMessage, setConfirmationMessage] = useState("");
+
+  function saveProfile() {
+    const parsedWeight = Number(weight.trim().replace(",", "."));
+    setConfirmationMessage("");
+
+    if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) {
+      setErrorMessage("Enter a valid weight in kg.");
+      return;
+    }
+
+    const profile: UserProfile = { weight: parsedWeight, goal, activityLevel };
+    setSavedProfile(profile);
+    setErrorMessage("");
+    setConfirmationMessage("Profile saved.");
+  }
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>My Profile</Text>
 
       <View style={styles.card}>
-        <Text style={styles.label}>Current Weight</Text>
-        <Text style={styles.value}>{profile.weight} kg</Text>
+        <Text style={styles.label}>Weight (kg)</Text>
+        <TextInput
+          accessibilityLabel="Weight in kg"
+          style={styles.input}
+          value={weight}
+          onChangeText={setWeight}
+          keyboardType="decimal-pad"
+        />
       </View>
 
       <View style={styles.card}>
         <Text style={styles.label}>Goal</Text>
-        <Text style={styles.value}>{goalLabels[profile.goal]}</Text>
+        {(["lose", "maintain", "gain"] as const).map((option) => (
+          <Button
+            key={option}
+            title={{ lose: "Lose", maintain: "Maintain", gain: "Gain" }[option]}
+            onPress={() => setGoal(option)}
+            accessibilityState={{ selected: goal === option }}
+          />
+        ))}
+        <Text>Selected: {goalLabels[goal]}</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.label}>Activity Level</Text>
-        <Text style={styles.value}>{activityLabels[profile.activityLevel]}</Text>
+        {(["low", "medium", "high"] as const).map((option) => (
+          <Button
+            key={option}
+            title={{ low: "Low", medium: "Medium", high: "High" }[option]}
+            onPress={() => setActivityLevel(option)}
+            accessibilityState={{ selected: activityLevel === option }}
+          />
+        ))}
+        <Text>Selected: {activityLabels[activityLevel]}</Text>
       </View>
-    </View>
+      <Button title="Save Profile" onPress={saveProfile} />
+      {errorMessage ? <Text accessibilityRole="alert">{errorMessage}</Text> : null}
+      {confirmationMessage ? <Text accessibilityLiveRegion="polite">{confirmationMessage}</Text> : null}
+      {savedProfile ? (
+        <View style={styles.card}>
+          <Text style={styles.label}>Saved Profile</Text>
+          <Text style={styles.value}>{savedProfile.weight} kg</Text>
+          <Text>{goalLabels[savedProfile.goal]}</Text>
+          <Text>{activityLabels[savedProfile.activityLevel]}</Text>
+        </View>
+      ) : null}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 24,
+    paddingBottom: 24,
   },
   title: {
     fontSize: 28,
@@ -71,6 +123,14 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 20,
     fontWeight: "600",
+    color: "#111827",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#6B7280",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 20,
     color: "#111827",
   },
 });
