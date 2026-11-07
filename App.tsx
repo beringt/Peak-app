@@ -1,12 +1,12 @@
 import { SafeAreaView, StatusBar, StyleSheet } from "react-native";
 
-import { ProfileScreen } from "./src/features/profile/ProfileScreen";
+import { TrainingPlanScreen } from "./src/features/training/TrainingPlanScreen";
 
 export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <ProfileScreen />
+      <TrainingPlanScreen />
     </SafeAreaView>
   );
 }
