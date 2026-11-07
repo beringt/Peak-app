@@ -15,7 +15,8 @@ import { mergeVisibleTrainingPlan } from "./src/features/training/rollingPlan";
 import type { PeakData } from "./src/types";
 import { WeeklyReviewScreen } from "./src/features/recommendation/WeeklyReviewScreen";
 import { decideWeeklyReview, evaluateAndStoreWeeklyReview, saveWeeklySettings } from "./src/features/recommendation/weeklyReview";
-import { captureLegacyRecommendation } from "./src/features/recommendation/captureRecommendation";
+import { captureTodayRecommendations } from "./src/features/recommendation/todayRecommendation";
+import { ExperimentalTodayScreen } from "./src/features/recommendation/ExperimentalTodayScreen";
 import { addWeightMeasurement, deleteWeightMeasurement, editWeightMeasurement } from "./src/features/weight/weightHistory";
 
 export default function App() {
@@ -24,7 +25,9 @@ export default function App() {
 
 function PeakApp() {
   const today = useLocalDay();
+  const activeTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [activeScreen, setActiveScreen] = useState<"today" | "profile" | "training" | "weight" | "data" | "review">("today");
+  const [todayMode, setTodayMode] = useState<"existing" | "experimental">("existing");
   const [persistence] = useState(() => createLocalPersistence(deviceStorage));
   const saved = useSyncExternalStore(persistence.subscribe, persistence.getSnapshot, persistence.getSnapshot);
   useEffect(() => { void persistence.load(); }, [persistence]);
@@ -35,17 +38,17 @@ function PeakApp() {
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
   }
   function updateData(change: (data: PeakData) => PeakData) {
-    persistence.update(data => captureLegacyRecommendation(change(data), snapshotContext()));
+    persistence.update(data => captureTodayRecommendations(change(data), snapshotContext(), todayMode === "experimental"));
   }
   useEffect(() => {
-    if (saved.phase === "ready") persistence.update(data => captureLegacyRecommendation(data, snapshotContext()));
-  }, [persistence, saved.phase, today, profile, trainingPlan, weightEntries]);
+    if (saved.phase === "ready") persistence.update(data => captureTodayRecommendations(data, snapshotContext(), todayMode === "experimental"));
+  }, [persistence, saved.phase, today, profile, trainingPlan, weightEntries, todayMode, saved.data.weeklyReview, activeTimeZone]);
   function weeklyAction(change: (data: PeakData) => PeakData): string | null {
     try { updateData(change); return null; } catch (error) { return error instanceof Error ? error.message : "Review could not be completed."; }
   }
   async function resetData() {
     const success = await persistence.reset();
-    if (success) setActiveScreen("today");
+    if (success) { setTodayMode("existing"); setActiveScreen("today"); }
     return success;
   }
 
@@ -99,14 +102,15 @@ function PeakApp() {
           <Button title="Set Up Profile" onPress={() => setActiveScreen("profile")} />
         </View>
       ) : null}
-      {activeScreen === "today" ? (
-        <DailyRecommendationScreen
-          today={today}
-          profile={profile}
-          trainingPlan={trainingPlan}
-          weightEntries={weightEntries}
-        />
-      ) : null}
+      {activeScreen === "today" ? <>
+        <View style={styles.todayChoice}>
+          <Button title="Existing Today" onPress={() => setTodayMode("existing")} />
+          <Button title="Experimental Today" onPress={() => setTodayMode("experimental")} />
+          <Text>Selected: {todayMode}. Restart returns to the existing calculation.</Text>
+        </View>
+        {todayMode === "existing" ? <DailyRecommendationScreen today={today} profile={profile} trainingPlan={trainingPlan} weightEntries={weightEntries} /> :
+          <ExperimentalTodayScreen data={saved.data} context={snapshotContext()} saveStatus={saved.saveStatus} onOpen={setActiveScreen} onExisting={() => setTodayMode("existing")} />}
+      </> : null}
       {activeScreen === "profile" ? (
         <ProfileScreen savedProfile={profile} saveStatus={saved.saveStatus} onSave={(value) => updateData((data) => ({ ...data, profile: value }))} />
       ) : null}
@@ -155,6 +159,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
   },
+  todayChoice: { paddingHorizontal: 12, paddingVertical: 6 },
   storageNotice: {
     padding: 12,
   },

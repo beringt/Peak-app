@@ -305,7 +305,7 @@ Each review uses the most recent local Monday D as fixed evidence cutoff, even
 when opened later in the week. Windows are D−14..D−8 and D−7..D−1, using #41's
 coverage/freshness/quality rules. In addition, the oldest measurement before D
 must fall on or before D−14 (14 elapsed days of recorded history). Current/future
-readings cannot fill missing dates. Known prior live recommendation IDs in that
+readings cannot fill missing dates. Known prior ready recommendation IDs from both streams in that
 window are retained; missing target records are flagged, not reconstructed.
 Numeric proposals require explicit per-period confirmations of reliable weights
 and reasonable adherence. These are self-reports; actual activity/intake is not
@@ -353,3 +353,34 @@ profile/measurements, and are never carried as a global assertion. Accepted
 experimental offsets feed only the experimental daily preview; there is no
 background scheduler or live v2 activation. UI/runtime eligibility is still a
 prototype using provisional nutrition rules, not validated causal calibration.
+
+## Optional Experimental Today (#45)
+
+Schema 5 remains unchanged. Experimental snapshot input now also captures raw
+weightEntries, weightEvidence, reviewSettings and baselineConfirmed. The engine
+continues to use only its agreed daily inputs; evidence is display context, not
+an automatic weight-derived calorie adjustment. The source input revision links
+to the current live record, saved settings revision and review-record count.
+
+The app defaults to Existing Today on every launch. Only an explicit local-session
+opt-in captures/displays Experimental Today; leaving the app does not persist that
+choice. Source commits and settings/decision changes while opted in atomically
+capture both streams. Unchanged source/date/time-zone/settings do not append.
+No-profile/reset states never recreate experimental records. Existing v1 targets
+continue independently, without treating a v2 fallback as a new recommendation.
+
+Current display requires a source-matching captured input and supported result
+shape. Pending/failed storage is labelled, and a mismatch holds old targets.
+Historical display reads a detached copy without calculator replay. The last five
+records are offered in Today while the complete history remains exportable.
+Unsupported old formats remain stored instead of being recalculated or dropped.
+
+A weekly review's available prior target references include both live and
+experimental ready records/revisions, with explicit channel/version labels and
+unique-date coverage. No reference proves which targets were followed; the flag
+followed-target-source-not-verified remains explicit. Existing accepted review
+records are not updated to this new display-context convention.
+
+The UI explains estimates, held contributions/locks and missing evidence using
+stored reasons. Physical iPhone/personal-pilot requirements remain unchecked in
+IPHONE_PILOT.md and #45 until the owner actually reports the observations.
