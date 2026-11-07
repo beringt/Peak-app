@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import type { ComponentRef } from "react";
 import { Button, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import type { WeightEntry } from "../../types";
@@ -20,7 +21,7 @@ export function WeightLogScreen({ weightEntries, onAdd, onUpdate, onDelete }: We
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
   function resetForm() {
     setWeight("");

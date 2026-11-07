@@ -3,26 +3,27 @@
 ## Status og valgt vej
 
 Forberedelse til #26; opgaven er ikke afsluttet ved merge af denne vejledning.
-Vi vælger Expo SDK 54 og Expo Go fra App Store til en afgrænset personlig pilot.
-Det er en kompatibilitetsopgradering fra SDK 53, ikke en opgradering til seneste
-SDK eller en produktionsdistribution.
+Peak er opgraderet til **Expo SDK 58**, fordi ejerens installerede Expo Go
+rapporterer **client version 58.0.5 / Supported SDK 58.0.0**. Den tidligere
+SDK 54-vej passede ikke til denne klient. Versionskonflikten skal løses før
+telefonens fortsatte nedbrud kan vurderes; match alene beviser ikke, at et native
+nedbrud er rettet.
 
-Officiel Expo-vejledning kontrolleret 7. november 2026:
+Officielle kilder og observeret klientversion:
 
-- [Expo Go-versioner](https://docs.expo.dev/troubleshooting/expo-go-version-mismatch/):
-  App Store-udgaven understøtter SDK 54. SDK 53 passer ikke til den.
-- [SDK 54-ændringer](https://expo.dev/changelog/sdk-54):
-  React Native 0.81 / React 19.1, Node mindst 20.19.4 og eksisterende fil-API via
-  `expo-file-system/legacy`.
-- [Tunnel](https://docs.expo.dev/more/expo-cli/#tunneling):
-  Expo CLI kan bruge ngrok, så telefon og Codespace ikke behøver samme lokale net.
+- [SDK 58](https://expo.dev/changelog/sdk-58): SDK 58 understøttes af den nye
+  Expo Go. SDK-version i projekt og klient skal matche.
+- [Opgraderingsvejledning](https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/):
+  opgradér trinvist og kontroller kompatible afhængigheder.
+- [Fil-API](https://docs.expo.dev/versions/latest/sdk/filesystem/): eksport bruger
+  File/Paths; midlertidige filer slettes efter deling eller fejl.
 - [Expo-login på iPhone](https://docs.expo.dev/troubleshooting/expo-go-sign-in-required/):
   brug samme Expo-konto i CLI og Expo Go.
 
-Denne App Store/Expo Go-vej kræver ikke køb af Apple Developer-medlemskab.
-En senere egen iOS-build/TestFlight-vej kræver særskilt afklaring af medlemskab og
-eventuelle Expo-buildomkostninger. Ingen build, betaling eller publicering er startet.
-Codespaces har egne forbrugsgrænser. Stop, hvis et trin kræver en betaling.
+Brug den allerede installerede Expo Go-klient, og kontrollér dens Supported SDK.
+Der startes ingen betalte builds, køb eller App Store-publicering. En senere egen
+native build har separate Apple-/Expo-krav og omkostninger, som skal afklares før
+bestilling. Codespaces har egne forbrugsgrænser.
 
 ## Før du opdaterer
 
@@ -46,7 +47,7 @@ npm run typecheck
 npx expo install --check
 ```
 
-Hvis Node er for gammel, brug Codespaces' nvm, hvis det er tilgængeligt:
+Hvis Node ikke er mindst 22.13 på 22-linjen eller 24.3 på 24-linjen, brug Codespaces' nvm, hvis det er tilgængeligt:
 
 ```sh
 nvm install
@@ -65,7 +66,8 @@ npm run iphone
 ```
 
 Indtast login/2FA i Expos loginforløb, aldrig i GitHub-opgaver eller chat.
-`@expo/ngrok` er en lokal udviklingsafhængighed, så global installation er unødvendig.
+SDK 58 har en ny indbygget tunnel. @expo/ngrok er ikke længere en afhængighed.
+Følg CLI-loginforløbet (browserlogin er standard); indtast ikke koder i chat.
 
 På iPhone:
 
@@ -80,12 +82,12 @@ Den er en forbindelse til udviklingsserveren, ikke en udgivet selvstændig app.
 
 ## Hvis forbindelsen fejler
 
-- Versionsfejl: kontrollér, at main/denne PR er hentet, Expo Go bruger SDK 54,
+- Versionsfejl: kontrollér, at main/denne PR er hentet, Expo Go understøtter SDK 58,
   og `npx expo install --check` består. Genstart med `npm run iphone -- --clear`.
 - Loginfejl: kontrollér samme Expo-brugernavn i terminal og telefon.
 - Port optaget: stop den gamle server, eller brug `npm run iphone -- --port 8087`.
 - Tunnel-timeout: stop/genstart serveren, kontrollér internet og
-  [ngrok-status](https://status.ngrok.com/). Ændr ikke antivirus eller
+  [Expo-status](https://status.expo.dev/). Ændr ikke antivirus eller
   organisationspolitik på den lånte computer.
 - Hvis det fortsat fejler: registrér den konkrete fejl, og afklar en alternativ
   forbindelse. Køb ikke abonnement/Apple-medlemskab som automatisk løsning.
@@ -96,15 +98,15 @@ på den lånte computer. Expo CLI kan logges ud med `npx expo logout`.
 
 ## Testjournal
 
-Oplyst af ejer: **iOS 27**. Model, præcis OS-version og Expo Go-build er endnu
-ikke verificeret. Udfyld før native resultat registreres:
+Oplyst af ejer: **iOS 27**. Model og præcis OS-version er endnu ikke verificeret.
+Ejer har oplyst Expo Go 58.0.5 / Supported SDK 58.0.0. Udfyld før native resultat registreres:
 
 | Felt | Værdi |
 | --- | --- |
 | Dato og tester | Afventer |
 | iPhone-model | Afventer |
 | iOS-version inkl. patch | iOS 27 oplyst; præcis version afventer |
-| Expo Go-version/build | Afventer |
+| Expo Go-version/build | 58.0.5 / Supported SDK 58.0.0, oplyst af ejer |
 | Peak Git-commit | `git rev-parse HEAD` i det Codespace, der testes |
 | Node-version | `node --version` |
 | Kørsel | Native Expo Go eller Safari/web; må ikke sammenblandes |
@@ -112,20 +114,13 @@ ikke verificeret. Udfyld før native resultat registreres:
 
 ### Kontrolleret i udviklingsmiljøet
 
-7. november 2026, Linux / Node 24.22.1, kandidatændringen til SDK 54:
+Kandidatændringen til SDK 58: se PR-valideringen for de udførte automatiske
+kontroller og browserregressioner. Fysisk iPhone-afprøvning afventer.
 
-- Ren installation via `npm ci` består.
-- 180 tests og TypeScript-kontrol består.
-- Expo Doctor: 18/18 kontroller består.
-- iOS Hermes-bundle og webeksport lykkes. iOS-bundlen er ikke en signeret app.
-- Chromium ved 320 pixels: profil, valgte indstillinger, ugyldigt input,
-  skærmskift/genindlæsning, vægtredigering/sletning, ugeplan, dagskifte,
-  JSON-download, nulstilling og kontrollerede læse-/skrivefejl består.
-- Native eksport testes med mocks; fysisk deling og iOS-tastatur er ikke afprøvet.
-- `npm run iphone -- --port 8087` starter Metro, men tunnelen ender med
-  `ngrok tunnel took too long to connect` i dette miljø. Tunnel i ejerens
-  Codespace og åbning på telefonen afventer. Det er en uafklaret forbindelsesblokering,
-  ikke en bestået native test.
+Historisk: SDK 54-tunnelen blev forbundet i ejerens Codespace, men Expo Go
+lukkede ved åbning. Det blev derefter konstateret, at klienten var 58.0.5 og
+kun understøttede SDK 58. Den tidligere SDK 54-test dokumenterer derfor hverken
+SDK 58-forbindelse eller en fungerende native app.
 
 ### Fysisk iPhone: afventer ejerens afprøvning
 

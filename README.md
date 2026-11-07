@@ -2,7 +2,7 @@
 
 Expo / React Native app for training plans, weight history and daily nutrition targets.
 
-Use Node 22 (minimum supported: 20.19.4).
+Use Node 22.13+ or 24.3+ (Node 22 is selected in .nvmrc).
 
 ```sh
 npm ci

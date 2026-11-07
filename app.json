@@ -7,9 +7,6 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
-    },
-    "android": {
-      "edgeToEdgeEnabled": true
     }
   }
 }

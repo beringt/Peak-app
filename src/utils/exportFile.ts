@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import * as FileSystem from "expo-file-system/legacy";
+import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
 export async function exportFile(json: string): Promise<"download-requested" | "share-closed"> {
@@ -18,17 +18,18 @@ export async function exportFile(json: string): Promise<"download-requested" | "
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
   }
-  if (!FileSystem.cacheDirectory || !await Sharing.isAvailableAsync()) {
+  if (!await Sharing.isAvailableAsync()) {
     throw new Error("File sharing is unavailable on this device.");
   }
-  const uri = FileSystem.cacheDirectory + filename;
+  const file = new File(Paths.cache, filename);
   try {
-    await FileSystem.writeAsStringAsync(uri, json, { encoding: FileSystem.EncodingType.UTF8 });
-    await Sharing.shareAsync(uri, {
+    file.create();
+    await file.write(json);
+    await Sharing.shareAsync(file.uri, {
       mimeType: "application/json", UTI: "public.json", dialogTitle: "Export Peak data",
     });
     return "share-closed";
   } finally {
-    await FileSystem.deleteAsync(uri, { idempotent: true });
+    if (file.exists) await file.delete();
   }
 }
