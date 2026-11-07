@@ -1,8 +1,9 @@
-import type { PeakData } from "../types";
+import type { PeakData, TrainingDay } from "../types";
 import { validProfileInputs } from "../features/profile/profileInputs";
+import { sessionsForDay, validSessions } from "../features/training/plannedSessions";
 import { isDateKey } from "./date";
 
-export const PEAK_DATA_VERSION = 2 as const;
+export const PEAK_DATA_VERSION = 3 as const;
 
 export type PersistedPeakData = {
   version: typeof PEAK_DATA_VERSION;
@@ -41,12 +42,12 @@ function positiveWeight(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-function validData(value: unknown, legacy = false): value is PeakData {
+function validData(value: unknown, version = PEAK_DATA_VERSION as number): value is PeakData {
   if (!record(value) || !hasKeys(value, ["profile", "trainingPlan", "weightEntries"])) return false;
   const { profile, trainingPlan, weightEntries } = value;
   if (profile !== null && (
     !record(profile) ||
-    !(hasKeys(profile, ["weight", "goal", "activityLevel"]) || (!legacy &&
+    !(hasKeys(profile, ["weight", "goal", "activityLevel"]) || (version >= 2 &&
       hasKeys(profile, ["weight", "goal", "activityLevel", "baselineInputs"]) &&
       (profile.baselineInputs === null || validProfileInputs(profile.baselineInputs, profile.goal)))) ||
     !positiveWeight(profile.weight) ||
@@ -57,10 +58,19 @@ function validData(value: unknown, legacy = false): value is PeakData {
   if (!Array.isArray(trainingPlan) || !Array.isArray(weightEntries)) return false;
   const dates = new Set<string>();
   for (const day of trainingPlan) {
-    if (!record(day) || !hasKeys(day, ["date", "type"]) || !isDateKey(day.date) ||
+    if (!record(day) || !(hasKeys(day, ["date", "type"]) || (version >= 3 &&
+      hasKeys(day, ["date", "type", "sessions"]) && validSessions(day.sessions) &&
+      day.type === (day.sessions[0]?.type ?? "rest"))) || !isDateKey(day.date) ||
       !["strength", "endurance", "rest"].includes(day.type as string) ||
       dates.has(day.date)) return false;
     dates.add(day.date);
+  }
+  const sessionIds = new Set<string>();
+  for (const day of trainingPlan as TrainingDay[]) {
+    for (const session of sessionsForDay(day)) {
+      if (sessionIds.has(session.id)) return false;
+      sessionIds.add(session.id);
+    }
   }
   const ids = new Set<string>();
   for (const entry of weightEntries) {
@@ -85,10 +95,10 @@ export function decodePersistedData(raw: string | null): DecodeResult {
     (parsed.version as number) < 1) {
     return { status: "invalid", reason: "schema", raw };
   }
-  if (parsed.version !== 1 && parsed.version !== PEAK_DATA_VERSION) {
+  if (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== PEAK_DATA_VERSION) {
     return { status: "unsupported-version", version: parsed.version as number, raw };
   }
-  if (!hasKeys(parsed, ["version", "data"]) || !validData(parsed.data, parsed.version === 1)) {
+  if (!hasKeys(parsed, ["version", "data"]) || !validData(parsed.data, parsed.version as number)) {
     return { status: "invalid", reason: "schema", raw };
   }
   return { status: "valid", value: { version: PEAK_DATA_VERSION, data: parsed.data } };

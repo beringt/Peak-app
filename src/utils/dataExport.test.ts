@@ -10,7 +10,7 @@ const data: PeakData = {
 test("exports every saved record, schema version and UTC export time without mutation", () => {
   const before = JSON.stringify(data);
   expect(JSON.parse(createDataExport(data, new Date("2026-11-07T12:00:00Z")))).toEqual({
-    version: 2, exportedAt: "2026-11-07T12:00:00.000Z", data,
+    version: 3, exportedAt: "2026-11-07T12:00:00.000Z", data,
   });
   expect(JSON.stringify(data)).toBe(before);
 });

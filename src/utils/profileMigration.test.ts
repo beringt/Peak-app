@@ -14,12 +14,12 @@ const tick = () => new Promise<void>(resolve => setImmediate(resolve));
 
 test("migrates a v1 fixture purely, preserving IDs/order, profile and unknown optional inputs", () => {
   const raw = JSON.stringify({ version: 1, data: legacy });
-  expect(decodePersistedData(raw)).toEqual({ status: "valid", value: { version: 2, data: legacy } });
+  expect(decodePersistedData(raw)).toEqual({ status: "valid", value: { version: 3, data: legacy } });
   expect(JSON.parse(raw).version).toBe(1);
-  expect(decodePersistedData(JSON.stringify({ version: 1, data: { profile: null, trainingPlan: [], weightEntries: [] } }))).toMatchObject({ status: "valid", value: { version: 2 } });
+  expect(decodePersistedData(JSON.stringify({ version: 1, data: { profile: null, trainingPlan: [], weightEntries: [] } }))).toMatchObject({ status: "valid", value: { version: 3 } });
 });
 
-test("loads v1 without rewriting the original; explicit save writes v2; reload/export/reset include new fields", async () => {
+test("loads v1 without rewriting the original; explicit save writes current schema; reload/export/reset include new fields", async () => {
   let raw: string | null = JSON.stringify({ version: 1, data: legacy });
   const original = raw;
   const storage = { read: jest.fn(async () => raw), write: jest.fn(async (next: string) => { raw = next; }), remove: jest.fn(async () => { raw = null; }) };
@@ -29,7 +29,7 @@ test("loads v1 without rewriting the original; explicit save writes v2; reload/e
   expect(storage.write).not.toHaveBeenCalled();
   app.update(data => ({ ...data, profile: { ...data.profile!, baselineInputs: inputs } }));
   await tick();
-  expect(JSON.parse(raw!).version).toBe(2);
+  expect(JSON.parse(raw!).version).toBe(3);
   const reload = createLocalPersistence(storage);
   await reload.load();
   const data = reload.getSnapshot().data;
@@ -76,7 +76,7 @@ test("optional inputs do not activate the future recommendation rules", () => {
     .toEqual(calculateDailyRecommendation(base));
 });
 
-test("failed first v2 write retains original v1 data; retry persists all new inputs", async () => {
+test("failed first current-schema write retains original v1 data; retry persists all new inputs", async () => {
   let stored = JSON.stringify({ version: 1, data: legacy });
   const original = stored;
   const storage = {
@@ -93,5 +93,5 @@ test("failed first v2 write retains original v1 data; retry persists all new inp
   app.retrySave();
   await tick();
   expect(app.getSnapshot().saveStatus).toBe("saved");
-  expect(decodePersistedData(stored)).toMatchObject({ status: "valid", value: { version: 2, data: { profile: { baselineInputs: inputs } } } });
+  expect(decodePersistedData(stored)).toMatchObject({ status: "valid", value: { version: 3, data: { profile: { baselineInputs: inputs } } } });
 });

@@ -9,10 +9,10 @@ function visibleDates(today: string): string[] {
 export function visibleTrainingPlan(
   savedPlan: TrainingDay[], today: string, edits: Record<string, TrainingType> = {}
 ): TrainingDay[] {
-  const saved = new Map(savedPlan.map((day) => [day.date, day.type]));
-  return visibleDates(today).map((date) => ({
-    date, type: edits[date] ?? saved.get(date) ?? "rest",
-  }));
+  const saved = new Map(savedPlan.map((day) => [day.date, day]));
+  return visibleDates(today).map((date) => edits[date] !== undefined
+    ? { date, type: edits[date] }
+    : saved.get(date) ?? { date, type: "rest" });
 }
 
 export function mergeVisibleTrainingPlan(

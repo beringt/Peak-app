@@ -376,6 +376,15 @@ Users may skip every additional input and retain the existing calculator.
 This resolves the input-collection subset of D1/D3 for #39, not their numerical
 recommendation defaults or the remaining domain review.
 
+For #40 the owner subsequently approved the input/label subset of D2: nullable
+session duration/intensity, 1–240 minutes per session, at most 360 known minutes
+per day, low/moderate/high or unknown intensity, stable session IDs and multiple
+sessions per date. One continuous endurance session >90 minutes is labelled long.
+These are registration and display rules only, not approval of the proposed MET
+mapping, exercise energy estimates, macro targets or next-day preparation.
+During this transition the legacy calculator uses the first saved session's
+category only; it does not sum multiple sessions or use their new details.
+
 ### 10.2 Actual data and evaluation
 
 The owner requires actual activity and actual nutrition intake for a meaningful

@@ -13,7 +13,16 @@ export type UserProfile = {
   activityLevel: "low" | "medium" | "high";
 };
 
+export type PlannedSession = {
+  id: string;
+  type: "strength" | "endurance";
+  durationMinutes: number | null;
+  intensity: "low" | "moderate" | "high" | null;
+};
+
 export type TrainingDay = {
+  // Absent only for legacy days: adapt to a stable-ID session with unknown details.
+  sessions?: PlannedSession[];
   date: string;
   type: "strength" | "endurance" | "rest";
 };
