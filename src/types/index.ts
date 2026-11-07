@@ -35,7 +35,24 @@ export type WeightEntry = {
   weightKg: number;
 };
 
+export type StoredJson = null | boolean | number | string | StoredJson[] | { [key: string]: StoredJson };
+export type StoredJsonObject = { [key: string]: StoredJson };
+
+export type RecommendationSnapshot = {
+  id: string;
+  localDate: string;
+  channel: "live" | "experimental";
+  revision: number;
+  previousRevisionId: string | null;
+  generatedAt: string;
+  timeZone: string;
+  ruleVersion: string;
+  input: StoredJsonObject;
+  result: StoredJsonObject;
+};
+
 export type PeakData = {
+  recommendationSnapshots?: RecommendationSnapshot[];
   profile: UserProfile | null;
   trainingPlan: TrainingDay[];
   weightEntries: WeightEntry[];

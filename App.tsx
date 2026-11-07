@@ -12,6 +12,8 @@ import { deviceStorage } from "./src/utils/deviceStorage";
 import { useLocalDay } from "./src/utils/useLocalDay";
 import { formatDateKey } from "./src/utils/date";
 import { mergeVisibleTrainingPlan } from "./src/features/training/rollingPlan";
+import type { PeakData } from "./src/types";
+import { captureLegacyRecommendation } from "./src/features/recommendation/captureRecommendation";
 import { addWeightMeasurement, deleteWeightMeasurement, editWeightMeasurement } from "./src/features/weight/weightHistory";
 
 export default function App() {
@@ -25,6 +27,17 @@ function PeakApp() {
   const saved = useSyncExternalStore(persistence.subscribe, persistence.getSnapshot, persistence.getSnapshot);
   useEffect(() => { void persistence.load(); }, [persistence]);
   const { profile, trainingPlan, weightEntries } = saved.data;
+  function snapshotContext() {
+    const clock = new Date();
+    return { localDate: formatDateKey(clock), generatedAt: clock.toISOString(),
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+  }
+  function updateData(change: (data: PeakData) => PeakData) {
+    persistence.update(data => captureLegacyRecommendation(change(data), snapshotContext()));
+  }
+  useEffect(() => {
+    if (saved.phase === "ready") persistence.update(data => captureLegacyRecommendation(data, snapshotContext()));
+  }, [persistence, saved.phase, today, profile, trainingPlan, weightEntries]);
   async function resetData() {
     const success = await persistence.reset();
     if (success) setActiveScreen("today");
@@ -89,10 +102,10 @@ function PeakApp() {
         />
       ) : null}
       {activeScreen === "profile" ? (
-        <ProfileScreen savedProfile={profile} saveStatus={saved.saveStatus} onSave={(value) => persistence.update((data) => ({ ...data, profile: value }))} />
+        <ProfileScreen savedProfile={profile} saveStatus={saved.saveStatus} onSave={(value) => updateData((data) => ({ ...data, profile: value }))} />
       ) : null}
       {activeScreen === "training" ? (
-        <TrainingPlanScreen today={today} savedPlan={trainingPlan} onSave={(value) => persistence.update((data) => ({
+        <TrainingPlanScreen today={today} savedPlan={trainingPlan} onSave={(value) => updateData((data) => ({
           ...data, trainingPlan: mergeVisibleTrainingPlan(data.trainingPlan, value, formatDateKey(new Date())),
         }))} />
       ) : null}
@@ -100,13 +113,13 @@ function PeakApp() {
         <WeightLogScreen
           today={today}
           weightEntries={weightEntries}
-          onAdd={(value) => persistence.update((data) => ({
+          onAdd={(value) => updateData((data) => ({
             ...data, weightEntries: addWeightMeasurement(data.weightEntries, value),
           }))}
-          onUpdate={(id, value) => persistence.update((data) => ({
+          onUpdate={(id, value) => updateData((data) => ({
             ...data, weightEntries: editWeightMeasurement(data.weightEntries, id, value),
           }))}
-          onDelete={(id) => persistence.update((data) => ({
+          onDelete={(id) => updateData((data) => ({
             ...data, weightEntries: deleteWeightMeasurement(data.weightEntries, id),
           }))}
         />

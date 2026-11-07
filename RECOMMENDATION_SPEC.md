@@ -505,3 +505,20 @@ v2 targets. Without those explicit inputs there are no fabricated fallback
 numbers. No old result is recalculated or overwritten; persistence/snapshots and
 UI activation belong to subsequent tasks. Mathematical tests do not establish
 individual physiological effectiveness or a generally safe intake.
+
+## Snapshot implementation transition (#43)
+
+The existing active v1 recommendation is now captured with its raw inputs,
+output, reasons/legacy-quality labels and version, using caller-supplied date,
+time zone and generation time. Current-day changes append linked revisions;
+prior-day entries are retained unchanged. Unchanged input/version/time zone
+reuses the latest record, and reading history never replays a calculator.
+Experimental v2 capture uses a separate channel and does not activate Today.
+
+No old history is invented when v1–v3 storage migrates to schema 4. After a valid
+load the app may capture only the current local day. Source commits and their
+snapshots are saved atomically in the existing full-payload write. Retry preserves
+the same pending revision. All history participates in export and confirmed reset.
+See LOCAL_DATA.md for envelope validation, opaque payload retention, equality and
+chain semantics. This implements D6's history/provenance subset; explanation UI
+and any activation of provisional numerical rules remain subsequent work.
