@@ -73,3 +73,15 @@ writes; use one instance for this pilot.
 
 The adapter exposes remove for the future explicit reset flow; this issue adds
 no automatic deletion, reset UI, import or migration of unversioned data.
+
+## Weight history
+
+Measurement forms accept today or earlier local calendar dates. Editing preserves
+the record ID and array position; explicit deletion requires confirmation.
+New IDs combine time and randomness with a collision check against existing IDs.
+These IDs are record identifiers, not dates or security tokens.
+History is displayed by measurement date descending, with later-created records
+first on equal dates (reverse array position). Saved array order preserves these
+ties across restarts, including for older numeric IDs. Editing does not create a
+new record or overwrite other measurements sharing its date. The existing trend
+calculator still uses chronological endpoints; no new weekly averaging is added.

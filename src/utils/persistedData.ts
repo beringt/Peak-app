@@ -1,4 +1,5 @@
 import type { PeakData } from "../types";
+import { isDateKey } from "./date";
 
 export const PEAK_DATA_VERSION = 1 as const;
 
@@ -39,16 +40,6 @@ function positiveWeight(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-/** Calendar-only validation: no parsing as a UTC instant or timezone conversion. */
-function dateKey(value: unknown): value is string {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split("-").map(Number);
-  if (year < 1 || month < 1 || month > 12 || day < 1) return false;
-  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  return day <= days[month - 1];
-}
-
 function validData(value: unknown): value is PeakData {
   if (!record(value) || !hasKeys(value, ["profile", "trainingPlan", "weightEntries"])) return false;
   const { profile, trainingPlan, weightEntries } = value;
@@ -63,7 +54,7 @@ function validData(value: unknown): value is PeakData {
   if (!Array.isArray(trainingPlan) || !Array.isArray(weightEntries)) return false;
   const dates = new Set<string>();
   for (const day of trainingPlan) {
-    if (!record(day) || !hasKeys(day, ["date", "type"]) || !dateKey(day.date) ||
+    if (!record(day) || !hasKeys(day, ["date", "type"]) || !isDateKey(day.date) ||
       !["strength", "endurance", "rest"].includes(day.type as string) ||
       dates.has(day.date)) return false;
     dates.add(day.date);
@@ -72,7 +63,7 @@ function validData(value: unknown): value is PeakData {
   for (const entry of weightEntries) {
     if (!record(entry) || !hasKeys(entry, ["id", "date", "weightKg"]) ||
       typeof entry.id !== "string" || entry.id.trim().length === 0 ||
-      ids.has(entry.id) || !dateKey(entry.date) ||
+      ids.has(entry.id) || !isDateKey(entry.date) ||
       !positiveWeight(entry.weightKg) || entry.weightKg > 500) return false;
     ids.add(entry.id);
   }

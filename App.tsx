@@ -7,6 +7,7 @@ import { TrainingPlanScreen } from "./src/features/training/TrainingPlanScreen";
 import { WeightLogScreen } from "./src/features/weight/WeightLogScreen";
 import { createLocalPersistence } from "./src/utils/localPersistence";
 import { deviceStorage } from "./src/utils/deviceStorage";
+import { addWeightMeasurement, deleteWeightMeasurement, editWeightMeasurement } from "./src/features/weight/weightHistory";
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<"today" | "profile" | "training" | "weight">("today");
@@ -76,7 +77,15 @@ export default function App() {
       {activeScreen === "weight" ? (
         <WeightLogScreen
           weightEntries={weightEntries}
-          onAdd={(entry) => persistence.update((data) => ({ ...data, weightEntries: [...data.weightEntries, entry] }))}
+          onAdd={(value) => persistence.update((data) => ({
+            ...data, weightEntries: addWeightMeasurement(data.weightEntries, value),
+          }))}
+          onUpdate={(id, value) => persistence.update((data) => ({
+            ...data, weightEntries: editWeightMeasurement(data.weightEntries, id, value),
+          }))}
+          onDelete={(id) => persistence.update((data) => ({
+            ...data, weightEntries: deleteWeightMeasurement(data.weightEntries, id),
+          }))}
         />
       ) : null}
     </SafeAreaView>
