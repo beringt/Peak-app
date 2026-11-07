@@ -7,9 +7,13 @@ import { TrainingPlanScreen } from "./src/features/training/TrainingPlanScreen";
 import { WeightLogScreen } from "./src/features/weight/WeightLogScreen";
 import { createLocalPersistence } from "./src/utils/localPersistence";
 import { deviceStorage } from "./src/utils/deviceStorage";
+import { useLocalDay } from "./src/utils/useLocalDay";
+import { formatDateKey } from "./src/utils/date";
+import { mergeVisibleTrainingPlan } from "./src/features/training/rollingPlan";
 import { addWeightMeasurement, deleteWeightMeasurement, editWeightMeasurement } from "./src/features/weight/weightHistory";
 
 export default function App() {
+  const today = useLocalDay();
   const [activeScreen, setActiveScreen] = useState<"today" | "profile" | "training" | "weight">("today");
   const [persistence] = useState(() => createLocalPersistence(deviceStorage));
   const saved = useSyncExternalStore(persistence.subscribe, persistence.getSnapshot, persistence.getSnapshot);
@@ -63,6 +67,7 @@ export default function App() {
       ) : null}
       {activeScreen === "today" ? (
         <DailyRecommendationScreen
+          today={today}
           profile={profile}
           trainingPlan={trainingPlan}
           weightEntries={weightEntries}
@@ -72,7 +77,9 @@ export default function App() {
         <ProfileScreen savedProfile={profile} saveStatus={saved.saveStatus} onSave={(value) => persistence.update((data) => ({ ...data, profile: value }))} />
       ) : null}
       {activeScreen === "training" ? (
-        <TrainingPlanScreen savedPlan={trainingPlan} onSave={(value) => persistence.update((data) => ({ ...data, trainingPlan: value }))} />
+        <TrainingPlanScreen today={today} savedPlan={trainingPlan} onSave={(value) => persistence.update((data) => ({
+          ...data, trainingPlan: mergeVisibleTrainingPlan(data.trainingPlan, value, formatDateKey(new Date())),
+        }))} />
       ) : null}
       {activeScreen === "weight" ? (
         <WeightLogScreen
