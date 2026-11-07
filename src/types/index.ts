@@ -17,6 +17,12 @@ export type WeightEntry = {
   weightKg: number;
 };
 
+export type PeakData = {
+  profile: UserProfile | null;
+  trainingPlan: TrainingDay[];
+  weightEntries: WeightEntry[];
+};
+
 export type WeightTrend = {
   direction: "down" | "up" | "stable" | "unknown";
   changeKg: number;
