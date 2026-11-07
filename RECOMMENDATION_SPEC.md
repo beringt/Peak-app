@@ -385,6 +385,16 @@ mapping, exercise energy estimates, macro targets or next-day preparation.
 During this transition the legacy calculator uses the first saved session's
 category only; it does not sum multiple sessions or use their new details.
 
+For #41 the owner subsequently approved the weight-evidence subset of D5:
+daily medians, the two completed 7-day windows, at least four observed dates in
+each window, freshness at D−2 or later, and a review flag for same-day range
+>2% of the daily median. The helper uses the specified observed-date centre gap
+and retains full precision; the Weight screen displays ready results to two
+decimals. Insufficient coverage produces no rate. Stale/flagged data can retain
+an internal diagnostic rate but must not be used for automatic proposals.
+This approves evidence aggregation/visibility, not calorie feedback thresholds,
+weekly step sizes, adherence inference or numerical adjustments.
+
 ### 10.2 Actual data and evaluation
 
 The owner requires actual activity and actual nutrition intake for a meaningful

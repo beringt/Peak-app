@@ -98,6 +98,7 @@ function PeakApp() {
       ) : null}
       {activeScreen === "weight" ? (
         <WeightLogScreen
+          today={today}
           weightEntries={weightEntries}
           onAdd={(value) => persistence.update((data) => ({
             ...data, weightEntries: addWeightMeasurement(data.weightEntries, value),
