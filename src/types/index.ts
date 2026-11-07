@@ -51,7 +51,40 @@ export type RecommendationSnapshot = {
   result: StoredJsonObject;
 };
 
+export type WeeklyReviewSettings = {
+  mode: "conservative" | "neutral" | "aggressive";
+  baselineMethod: "manual" | "mifflin";
+  nonTrainingActivity: "low" | "medium" | "high" | null;
+  trainingBasis: "excludes-training" | "unknown";
+  minimumKcal: number | null;
+  minimumConfirmed: boolean;
+  nonOverlapConfirmed: boolean;
+  locks: { energyKcal: number | null; proteinGrams: number | null; fatGrams: number | null; carbsGrams: number | null };
+};
+export type WeeklyReviewRecord = {
+  id: string;
+  reviewKey: string;
+  periodStart: string;
+  baselineRevision: string;
+  ruleVersion: string;
+  revision: number;
+  previousRevisionId: string | null;
+  createdAt: string;
+  status: "proposed" | "accepted" | "declined" | "no-change" | "insufficient" | "review-needed" | "locked" | "constraints-conflict";
+  oldOffsetKcal: number;
+  proposedOffsetKcal: number | null;
+  input: StoredJsonObject;
+  result: StoredJsonObject;
+};
+export type WeeklyReviewState = {
+  settings: WeeklyReviewSettings;
+  settingsRevision: number;
+  basis: { fingerprint: string; revision: number; baselineRevision: string; offsetKcal: number; acceptedDecisionId: string | null };
+  records: WeeklyReviewRecord[];
+};
+
 export type PeakData = {
+  weeklyReview?: WeeklyReviewState;
   recommendationSnapshots?: RecommendationSnapshot[];
   profile: UserProfile | null;
   trainingPlan: TrainingDay[];

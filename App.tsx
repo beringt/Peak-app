@@ -13,6 +13,8 @@ import { useLocalDay } from "./src/utils/useLocalDay";
 import { formatDateKey } from "./src/utils/date";
 import { mergeVisibleTrainingPlan } from "./src/features/training/rollingPlan";
 import type { PeakData } from "./src/types";
+import { WeeklyReviewScreen } from "./src/features/recommendation/WeeklyReviewScreen";
+import { decideWeeklyReview, evaluateAndStoreWeeklyReview, saveWeeklySettings } from "./src/features/recommendation/weeklyReview";
 import { captureLegacyRecommendation } from "./src/features/recommendation/captureRecommendation";
 import { addWeightMeasurement, deleteWeightMeasurement, editWeightMeasurement } from "./src/features/weight/weightHistory";
 
@@ -22,7 +24,7 @@ export default function App() {
 
 function PeakApp() {
   const today = useLocalDay();
-  const [activeScreen, setActiveScreen] = useState<"today" | "profile" | "training" | "weight" | "data">("today");
+  const [activeScreen, setActiveScreen] = useState<"today" | "profile" | "training" | "weight" | "data" | "review">("today");
   const [persistence] = useState(() => createLocalPersistence(deviceStorage));
   const saved = useSyncExternalStore(persistence.subscribe, persistence.getSnapshot, persistence.getSnapshot);
   useEffect(() => { void persistence.load(); }, [persistence]);
@@ -38,6 +40,9 @@ function PeakApp() {
   useEffect(() => {
     if (saved.phase === "ready") persistence.update(data => captureLegacyRecommendation(data, snapshotContext()));
   }, [persistence, saved.phase, today, profile, trainingPlan, weightEntries]);
+  function weeklyAction(change: (data: PeakData) => PeakData): string | null {
+    try { updateData(change); return null; } catch (error) { return error instanceof Error ? error.message : "Review could not be completed."; }
+  }
   async function resetData() {
     const success = await persistence.reset();
     if (success) setActiveScreen("today");
@@ -77,6 +82,7 @@ function PeakApp() {
         </Text>
         {saved.saveStatus === "error" ? <Button title="Retry saving" onPress={persistence.retrySave} /> : null}
       </View>
+      <Button title="Weekly Review (Experimental)" onPress={() => setActiveScreen("review")} />
       <Button title="Data" onPress={() => setActiveScreen("data")} />
       <View style={styles.buttons}>
         {(["today", "profile", "training", "weight"] as const).map((screen) => (
@@ -124,6 +130,10 @@ function PeakApp() {
           }))}
         />
       ) : null}
+      {activeScreen === "review" ? <WeeklyReviewScreen data={saved.data} context={snapshotContext()} saveStatus={saved.saveStatus}
+        onSettings={(settings, reset) => weeklyAction(data => saveWeeklySettings(data, settings, reset))}
+        onEvaluate={confirmations => weeklyAction(data => evaluateAndStoreWeeklyReview(data, confirmations, snapshotContext()))}
+        onDecision={(id, action, confirmations) => weeklyAction(data => decideWeeklyReview(data, id, action, confirmations, snapshotContext()))} /> : null}
       {activeScreen === "data" ? (
         <DataScreen
           data={saved.data}

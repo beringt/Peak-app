@@ -75,7 +75,7 @@ test.each([1, 2])("v%s migration retains original raw/history and saves session 
   const adapted = sessionsForDay(day);
   app.update(data => ({ ...data, trainingPlan: [dayWithSessions(today, adapted), data.trainingPlan[1]] }));
   await new Promise<void>(resolve => setImmediate(resolve));
-  expect(JSON.parse(raw!).version).toBe(4);
+  expect(JSON.parse(raw!).version).toBe(5);
   const reloaded = createLocalPersistence(storage); await reloaded.load();
   expect(sessionsForDay(reloaded.getSnapshot().data.trainingPlan[0])).toEqual(adapted);
   expect(reloaded.getSnapshot().data.weightEntries).toEqual(original.weightEntries);

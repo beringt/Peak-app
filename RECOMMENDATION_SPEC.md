@@ -409,6 +409,17 @@ calculator has an explicit `legacy-v1` wrapper. See the implementation contract
 below. D1–D4 remain provisional for activation/domain review, while the input and
 arithmetic subset needed for this inactive #42 prototype is owner-approved.
 
+For #44 the owner approved the controlled weekly function as an experimental
+area after a plain-language review: a fixed Monday cutoff, goal-versus-observed
+comparison, small bounded mode-dependent changes, a cumulative ±10% maintenance
+cap, explicit reliable-weight/adherence confirmations and manual acceptance.
+Implementation follows section 6's precise percentages, defaults, rounding,
+tolerance and caps. A reviewed lower guard and feasible locked targets can hold
+an application. There is no automatic application or activation in Today.
+Self-reports do not substitute for the actual activity/nutrition evidence that
+the owner requires for meaningful evaluation; D1–D5 remain provisional for broad
+activation/domain review.
+
 ### 10.2 Actual data and evaluation
 
 The owner requires actual activity and actual nutrition intake for a meaningful
@@ -522,3 +533,26 @@ the same pending revision. All history participates in export and confirmed rese
 See LOCAL_DATA.md for envelope validation, opaque payload retention, equality and
 chain semantics. This implements D6's history/provenance subset; explanation UI
 and any activation of provisional numerical rules remain subsequent work.
+
+## Weekly implementation transition (#44)
+
+`weekly-v1-draft` persists settings, baseline context and linked proposal/action
+records in schema 5. The fixed Monday cutoff is independent of the actual preview
+and acceptance date. The complete review input, available prior recommendation
+IDs, weight evidence, target comparison, guard values, hypothetical daily results,
+reasons/flags and applied absolute offset remain traceable. Missing prior target
+records are disclosed rather than reconstructed. Actual food/activity imports
+and measured adherence are not available.
+
+Acceptance compares a freshly calculated candidate with the displayed stored
+proposal. Date/source/settings changes require a fresh preview; one accepted
+review cannot compound. Accepted/declined action records link to a proposal, and
+the accepted ID and offset persist atomically. Modes can change for future reviews
+without reapplying an accepted period. Profile/baseline changes require an explicit
+reset into a new context; old records are retained. Energy and macro locks remain
+in force, with blocked/conflicting results explained. A user's lower-bound check
+is a reviewed test guard, not proof of a generally safe intake.
+
+Only the experimental preview consumes these offsets. Today remains v1, and UI
+labels distinguish experimental acceptance from a saved live recommendation.
+See LOCAL_DATA.md for precise eligibility, persistence, reset and retry behavior.
