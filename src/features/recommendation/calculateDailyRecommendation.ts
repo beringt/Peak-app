@@ -70,3 +70,8 @@ export function calculateDailyRecommendation(
     trainingRecommendation: trainingTexts[trainingType],
   };
 }
+
+/** Explicit version wrapper; the existing UI continues to call the unchanged v1 helper. */
+export function calculateLegacyRecommendation(input: CalculateDailyRecommendationInput) {
+  return { ruleVersion: "legacy-v1" as const, recommendation: calculateDailyRecommendation(input) };
+}
