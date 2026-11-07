@@ -3,6 +3,7 @@ import { Button, ScrollView, StyleSheet, Text, TextInput, View } from "react-nat
 
 import type { WeightEntry } from "../../types";
 import { formatDateKey } from "../../utils/date";
+import { parseWeight } from "../../utils/weight";
 import { calculateWeightTrend } from "./calculateWeightTrend";
 
 type WeightLogScreenProps = {
@@ -15,8 +16,8 @@ export function WeightLogScreen({ weightEntries, onAdd }: WeightLogScreenProps) 
   const [errorMessage, setErrorMessage] = useState("");
 
   function addWeight() {
-    const parsedWeight = Number(weight.trim().replace(",", "."));
-    if (!Number.isFinite(parsedWeight) || parsedWeight <= 0 || parsedWeight > 500) {
+    const parsedWeight = parseWeight(weight);
+    if (parsedWeight === null) {
       setErrorMessage("Enter a valid weight in kg.");
       return;
     }

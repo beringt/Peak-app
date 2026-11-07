@@ -54,6 +54,12 @@ export default function App() {
           />
         ))}
       </View>
+      {activeScreen === "today" && profile === null ? (
+        <View style={styles.storageNotice}>
+          <Text>Start with your profile to get daily targets.</Text>
+          <Button title="Set Up Profile" onPress={() => setActiveScreen("profile")} />
+        </View>
+      ) : null}
       {activeScreen === "today" ? (
         <DailyRecommendationScreen
           profile={profile}
@@ -62,7 +68,7 @@ export default function App() {
         />
       ) : null}
       {activeScreen === "profile" ? (
-        <ProfileScreen savedProfile={profile} onSave={(value) => persistence.update((data) => ({ ...data, profile: value }))} />
+        <ProfileScreen savedProfile={profile} saveStatus={saved.saveStatus} onSave={(value) => persistence.update((data) => ({ ...data, profile: value }))} />
       ) : null}
       {activeScreen === "training" ? (
         <TrainingPlanScreen savedPlan={trainingPlan} onSave={(value) => persistence.update((data) => ({ ...data, trainingPlan: value }))} />
