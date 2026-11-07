@@ -137,7 +137,7 @@ These are proposed model constraints, not a nutritional adequacy assessment.
 P carbohydrate minimum Cmin:
 
 - No endurance: 0 in this allocation solver, not a recommendation to eat zero.
-- Total planned endurance 1–59 min: 3W g.
+- Total planned endurance at least 1 and less than 60 min: 3W g.
 - 60–90 min: 5W g.
 - More than 90 min: 6W g.
 
@@ -395,6 +395,20 @@ an internal diagnostic rate but must not be used for automatic proposals.
 This approves evidence aggregation/visibility, not calorie feedback thresholds,
 weekly step sizes, adherence inference or numerical adjustments.
 
+For #42 the owner approved implementing sections 3–5 as a separately tested,
+inactive experimental engine, after a plain-language explanation. This is not
+approval to replace Today or broadly activate these numerical recommendations.
+The owner emphasized that their known maintenance intake can exceed a formula
+estimate: a selected manual baseline is authoritative, with its own source and
+revision, and must never be silently replaced or capped by Mifflin. Training
+composition must be clarified to prevent double-counting; a manual number that
+includes training or has unknown composition returns needs-input in this model.
+
+The implementation uses ruleVersion `peak-v2-draft`; the unchanged existing
+calculator has an explicit `legacy-v1` wrapper. See the implementation contract
+below. D1–D4 remain provisional for activation/domain review, while the input and
+arithmetic subset needed for this inactive #42 prototype is owner-approved.
+
 ### 10.2 Actual data and evaluation
 
 The owner requires actual activity and actual nutrition intake for a meaningful
@@ -440,3 +454,54 @@ integration/evaluation tasks, not permission to implement imports in #39.
 
 Sources checked 7 November 2026. No quoted text or general ranges should be treated
 as validation of the complete combined Peak model.
+
+## Inactive #42 engine contract
+
+`calculateDailyTargetsV2` and its exported input/result types live in
+`src/features/recommendation`. There is no UI/persistence wiring and no storage
+migration. The caller supplies the local as-of date (through 9999-12-30 to keep
+tomorrow representable), time-zone label, profile/input revisions, explicit
+baseline selection with source/revision/training composition, saved plan, optional
+locks, and optional previously accepted weekly decision. The time-zone label is
+metadata for an already resolved local date, not a request for implicit conversion.
+
+Manual maintenance is supplied explicitly from the user's chosen baseline. It can
+be higher than the formula estimate; Mifflin is not calculated or substituted in
+manual mode. Selecting Mifflin instead requires the voluntary stored equation
+inputs and a separate non-training activity choice. Legacy activityLevel is not
+reused as this factor. Missing or unsupported values never become zeros, inferred
+physiology or a hidden alternative baseline. Target rate is not converted to an
+energy deficit here; it belongs to a later weekly review.
+
+Today must have an explicitly saved day; rest is an empty session list. Legacy
+strength/endurance days adapt to unknown details and therefore need input. All
+plan dates/IDs/session bounds are validated; today's exercise requires duration
+and intensity, plus explicit non-overlap confirmation for multiple sessions.
+Only today's sessions contribute exercise energy. Tomorrow's unknown plan or
+unknown endurance duration is disclosed and does not fabricate preparation; a
+known long session triggers preparation once even if several such sessions exist.
+
+Results carry status, canonical targets or null, provenance, structured reasons,
+quality flags, session estimates and named intermediate terms. Proposed goal,
+exercise and accepted-weekly terms remain visible when an energy lock holds them;
+reason deltas then report zero applied and energy-locked. Macro locks remain exact.
+Unsolvable allocations return constraints-conflict with values/shortfalls, never
+replacement targets. Canonical residuals retain precision; solved energy equality
+uses the specified 10^-6 kcal tolerance. Before discrete floor/ceiling steps,
+integer-boundary representation noise within 8 machine-epsilon units of the
+value scale is corrected; canonical residuals and user locks are not rounded.
+Invalid nonfinite diagnostic inputs are reported as strings rather than JSON-null
+numbers. Numerical display is a later UI task.
+
+A supplied accepted weekly offset is an absolute input, not a new calculation or
+side effect. Its decision ID, baseline revision and rule version must match.
+Eligibility, cadence, caps, adherence and acceptance belong to #44; #42 never
+creates or accepts a decision. Repeated calls cannot accumulate offsets.
+
+No weight evidence drives an automatic calorie change here. The caller may
+explicitly provide legacy training/trend inputs for a separately labelled
+`legacy-v1` preview when v2 needs input. That preview is never substituted into
+v2 targets. Without those explicit inputs there are no fabricated fallback
+numbers. No old result is recalculated or overwritten; persistence/snapshots and
+UI activation belong to subsequent tasks. Mathematical tests do not establish
+individual physiological effectiveness or a generally safe intake.
