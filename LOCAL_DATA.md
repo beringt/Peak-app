@@ -85,3 +85,18 @@ first on equal dates (reverse array position). Saved array order preserves these
 ties across restarts, including for older numeric IDs. Editing does not create a
 new record or overwrite other measurements sharing its date. The existing trend
 calculator still uses chronological endpoints; no new weekly averaging is added.
+
+## Rolling training plan
+
+The visible plan is today plus six local calendar days. Saved choices and unsaved
+choices for overlapping visible dates are retained as the date changes. Drafts
+for dates outside the view are not submitted; leaving Training discards drafts.
+Saving merges the displayed dates into the latest saved plan, preserving history
+and saved dates outside the current window. A save racing midnight does not
+overwrite the now-historical day with a stale draft.
+
+Today and Training share a local-day clock. It checks at local midnight, on native
+AppState activation, and on web focus/visible events. A once-per-minute fallback
+catches clock changes. No rollover or resume event writes data by itself.
+Historical records are retained in storage; this issue adds no history browser,
+recurrence, workouts or changes to recommendation formulas.

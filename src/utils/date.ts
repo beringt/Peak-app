@@ -5,8 +5,8 @@ export function formatDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function getNextSevenDateKeys(): string[] {
-  const today = new Date();
+export function getNextSevenDateKeys(startDate: Date = new Date()): string[] {
+  const today = new Date(startDate);
   today.setHours(12, 0, 0, 0);
 
   return Array.from({ length: 7 }, (_, offset) => {

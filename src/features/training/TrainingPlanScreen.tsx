@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Button, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import type { TrainingDay } from "../../types";
-import { getNextSevenDateKeys } from "../../utils/date";
+import type { TrainingDay, TrainingType } from "../../types";
+import { visibleTrainingPlan } from "./rollingPlan";
 
 const trainingLabels: Record<TrainingDay["type"], string> = {
   strength: "Strength",
@@ -13,22 +13,17 @@ const trainingLabels: Record<TrainingDay["type"], string> = {
 type TrainingPlanScreenProps = {
   savedPlan: TrainingDay[];
   onSave: (plan: TrainingDay[]) => void;
+  today: string;
 };
 
-export function TrainingPlanScreen({ savedPlan, onSave }: TrainingPlanScreenProps) {
-  const [trainingPlan, setTrainingPlan] = useState<TrainingDay[]>(() =>
-    getNextSevenDateKeys().map((date) => ({
-      date,
-      type: savedPlan.find((day) => day.date === date)?.type ?? "rest",
-    }))
-  );
-  const [confirmationMessage, setConfirmationMessage] = useState("");
+export function TrainingPlanScreen({ savedPlan, onSave, today }: TrainingPlanScreenProps) {
+  const [edits, setEdits] = useState<Record<string, TrainingType>>({});
+  const [submittedDay, setSubmittedDay] = useState<string | null>(null);
+  const trainingPlan = visibleTrainingPlan(savedPlan, today, edits);
 
   function selectTraining(date: string, type: TrainingDay["type"]) {
-    setTrainingPlan((currentPlan) =>
-      currentPlan.map((day) => (day.date === date ? { ...day, type } : day))
-    );
-    setConfirmationMessage("");
+    setEdits((current) => ({ ...current, [date]: type }));
+    setSubmittedDay(null);
   }
 
   return (
@@ -53,11 +48,12 @@ export function TrainingPlanScreen({ savedPlan, onSave }: TrainingPlanScreenProp
         title="Save Training Plan"
         onPress={() => {
           onSave(trainingPlan);
-          setConfirmationMessage("Training plan saved.");
+          setEdits({});
+          setSubmittedDay(today);
         }}
       />
-      {confirmationMessage ? (
-        <Text accessibilityLiveRegion="polite">{confirmationMessage}</Text>
+      {submittedDay === today ? (
+        <Text accessibilityLiveRegion="polite">Training plan submitted. Check the device save status above.</Text>
       ) : null}
     </ScrollView>
   );

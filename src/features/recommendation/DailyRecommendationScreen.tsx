@@ -9,10 +9,11 @@ type DailyRecommendationScreenProps = {
   profile: UserProfile | null;
   trainingPlan: TrainingDay[];
   weightEntries: WeightEntry[];
+  today: string;
 };
 
 export function DailyRecommendationScreen(data: DailyRecommendationScreenProps) {
-  const trainingType = getTodayTrainingType(data.trainingPlan);
+  const trainingType = getTodayTrainingType(data.trainingPlan, data.today);
   const weightTrend = calculateWeightTrend(data.weightEntries);
   const recommendation = calculateDailyRecommendation({
     profile: data.profile,
