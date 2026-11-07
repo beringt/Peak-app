@@ -10,8 +10,15 @@ export type TrainingDay = {
 };
 
 export type WeightEntry = {
+  id: string;
   date: string;
-  weight: number;
+  weightKg: number;
+};
+
+export type WeightTrend = {
+  direction: "down" | "up" | "stable" | "unknown";
+  changeKg: number;
+  hasEnoughData: boolean;
 };
 
 export type Recommendation = {
