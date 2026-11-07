@@ -3,6 +3,8 @@ import { Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from
 
 import type { UserProfile } from "../../types";
 import type { PersistenceSnapshot } from "../../utils/localPersistence";
+import { EMPTY_PROFILE_INPUTS, parseProfileInputs } from "./profileInputs";
+import type { ProfileInputDraft } from "./profileInputs";
 import { parseWeight } from "../../utils/weight";
 
 const goalLabels: Record<UserProfile["goal"], string> = {
@@ -28,11 +30,22 @@ export function ProfileScreen({ savedProfile, onSave, saveStatus }: ProfileScree
   const [goal, setGoal] = useState<UserProfile["goal"]>(savedProfile?.goal ?? "maintain");
   const [activityLevel, setActivityLevel] =
     useState<UserProfile["activityLevel"]>(savedProfile?.activityLevel ?? "medium");
+  const savedInputs = savedProfile?.baselineInputs ?? EMPTY_PROFILE_INPUTS;
+  const [inputs, setInputs] = useState<ProfileInputDraft>({
+    heightCm: String(savedInputs.heightCm ?? ""), ageYears: String(savedInputs.ageYears ?? ""),
+    manualMaintenanceKcal: String(savedInputs.manualMaintenanceKcal ?? ""),
+    targetRatePercentPerWeek: String(savedInputs.targetRatePercentPerWeek ?? ""),
+    equationVariant: savedInputs.equationVariant,
+  });
+  const parsedInputs = parseProfileInputs(inputs, goal);
   const [errorMessage, setErrorMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const hasChanges = savedProfile === null ||
     parseWeight(weight) !== savedProfile.weight ||
-    goal !== savedProfile.goal || activityLevel !== savedProfile.activityLevel;
+    goal !== savedProfile.goal || activityLevel !== savedProfile.activityLevel ||
+    parsedInputs === null ||
+    (["heightCm", "ageYears", "equationVariant", "manualMaintenanceKcal", "targetRatePercentPerWeek"] as const)
+      .some(key => parsedInputs[key] !== (key === "targetRatePercentPerWeek" && savedProfile.goal === "maintain" ? 0 : savedInputs[key]));
 
   function editing() {
     setSubmitted(false);
@@ -48,7 +61,11 @@ export function ProfileScreen({ savedProfile, onSave, saveStatus }: ProfileScree
       return;
     }
 
-    const profile: UserProfile = { weight: parsedWeight, goal, activityLevel };
+    if (parsedInputs === null) {
+      setErrorMessage("Check optional fields: height 100–250 cm; whole age 19–78; maintenance greater than 0 and up to 10,000 kcal/day; target rate 0–0.5% per week. Leave unknown fields blank.");
+      return;
+    }
+    const profile: UserProfile = { weight: parsedWeight, goal, activityLevel, baselineInputs: parsedInputs };
     onSave(profile);
     setErrorMessage("");
     setSubmitted(true);
@@ -119,6 +136,40 @@ export function ProfileScreen({ savedProfile, onSave, saveStatus }: ProfileScree
         ))}
         <Text>Selected: {activityLabels[activityLevel]}</Text>
       </View>
+      <View style={styles.card}>
+        <Text style={styles.label}>Optional baseline details</Text>
+        <Text style={styles.help}>These details are saved for future recommendations. Today's targets still use weight, goal and activity level. Leave unknown values blank; no physiology is inferred.</Text>
+        {([
+          ["heightCm", "Height (cm)", "100–250 cm"],
+          ["ageYears", "Age (years)", "Whole years, 19–78 for the proposed equation"],
+          ["manualMaintenanceKcal", "Manual maintenance (kcal/day)", "Greater than 0, up to 10,000; exclude training energy"],
+          ["targetRatePercentPerWeek", "Target weight change (% per week)", "Magnitude 0–0.5; direction follows your goal. Blank means unspecified"],
+        ] as const).map(([key, label, hint]) => key === "targetRatePercentPerWeek" && goal === "maintain" ?
+          <Text key={key} style={styles.help}>Maintenance target rate: 0% per week.</Text> : (
+          <View key={key}>
+            <Text style={styles.label}>{label}</Text>
+            <TextInput accessibilityLabel={label} accessibilityHint={hint} style={styles.input}
+              keyboardType={key === "ageYears" ? "number-pad" : "decimal-pad"}
+              value={inputs[key]} onChangeText={(value) => { editing(); setInputs(current => ({ ...current, [key]: value })); }} />
+            <Text style={styles.help}>{hint}</Text>
+          </View>
+        ))}
+        <View accessibilityRole="radiogroup" accessibilityLabel="Optional equation variant">
+          <Text style={styles.label}>Optional energy equation variant</Text>
+          <Text style={styles.help}>Choose a coefficient only if appropriate for you. Skipping is valid; you can supply manual maintenance instead. This does not change today's calculation.</Text>
+          {([null, "plus5", "minus161"] as const).map(option => (
+            <Pressable key={option ?? "skip"} accessibilityRole="radio"
+              accessibilityState={{ checked: inputs.equationVariant === option }}
+              aria-checked={inputs.equationVariant === option}
+              onPress={() => { editing(); setInputs(current => ({ ...current, equationVariant: option })); }}
+              style={[styles.option, inputs.equationVariant === option && styles.selectedOption]}>
+              <Text style={[styles.optionText, inputs.equationVariant === option && styles.selectedText]}>
+                {option === null ? "Skip equation variant" : option === "plus5" ? "Coefficient +5" : "Coefficient −161"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
       {hasChanges ? <Text style={styles.help}>Unsaved changes. Save to apply them.</Text> : null}
       <Button title="Save Profile" onPress={saveProfile} disabled={saveStatus === "saving"} />
       {errorMessage ? <Text accessibilityRole="alert">{errorMessage}</Text> : null}
@@ -135,6 +186,11 @@ export function ProfileScreen({ savedProfile, onSave, saveStatus }: ProfileScree
           <Text style={styles.value}>{savedProfile.weight} kg</Text>
           <Text>{goalLabels[savedProfile.goal]}</Text>
           <Text>{activityLabels[savedProfile.activityLevel]}</Text>
+          <Text>Height: {savedInputs.heightCm === null ? "Not supplied" : `${savedInputs.heightCm} cm`}</Text>
+          <Text>Age: {savedInputs.ageYears ?? "Not supplied"}</Text>
+          <Text>Equation variant: {savedInputs.equationVariant === "plus5" ? "+5" : savedInputs.equationVariant === "minus161" ? "−161" : "Not supplied"}</Text>
+          <Text>Manual maintenance: {savedInputs.manualMaintenanceKcal === null ? "Not supplied" : `${savedInputs.manualMaintenanceKcal} kcal/day (excluding training)`}</Text>
+          <Text>Target rate: {savedProfile.goal === "maintain" ? "0% per week" : savedInputs.targetRatePercentPerWeek === null ? "Not supplied" : `${savedInputs.targetRatePercentPerWeek}% per week (${savedProfile.goal})`}</Text>
         </View>
       ) : null}
     </ScrollView>

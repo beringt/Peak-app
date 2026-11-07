@@ -365,7 +365,16 @@ day with planned and completed work separate, at least two weeks of weight
 observations for trend review, explicit user acceptance of weekly calorie
 changes, and a foundation for later detailed strength/endurance programs.
 This approval does not select every numerical default in D1–D5 or resolve the
-exact profile fields, ranges and units required by #39.
+exact profile fields, ranges and units required by #39 (subsequently approved below).
+
+For #39 the owner subsequently approved optional height 100–250 cm, integer age
+19–78 for the proposed equation, a voluntary +5/−161 coefficient selection,
+manual non-training maintenance >0 to 10,000 kcal/day, and an unspecified or
+0–0.5%/week target-rate magnitude (maintenance is 0). Inputs are stored now; they
+do not activate the proposed baseline, target-rate or recommendation formulas.
+Users may skip every additional input and retain the existing calculator.
+This resolves the input-collection subset of D1/D3 for #39, not their numerical
+recommendation defaults or the remaining domain review.
 
 ### 10.2 Actual data and evaluation
 
