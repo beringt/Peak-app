@@ -9,6 +9,8 @@ export type TrainingDay = {
   type: "strength" | "endurance" | "rest";
 };
 
+export type TrainingType = TrainingDay["type"];
+
 export type WeightEntry = {
   id: string;
   date: string;
@@ -26,5 +28,16 @@ export type Recommendation = {
   protein: number;
   carbs: number;
   fat: number;
+  trainingRecommendation: string;
+};
+
+export type DailyRecommendation = {
+  calories: number;
+  macros: {
+    proteinGrams: number;
+    carbsGrams: number;
+    fatGrams: number;
+  };
+  trainingType: TrainingType;
   trainingRecommendation: string;
 };
