@@ -1,5 +1,5 @@
 jest.mock("react-native", () => ({ Platform: { OS: "ios" } }));
-jest.mock("expo-file-system", () => ({
+jest.mock("expo-file-system/legacy", () => ({
   cacheDirectory: "cache/",
   EncodingType: { UTF8: "utf8" },
   writeAsStringAsync: jest.fn(),
@@ -7,7 +7,7 @@ jest.mock("expo-file-system", () => ({
 }));
 jest.mock("expo-sharing", () => ({ isAvailableAsync: jest.fn(), shareAsync: jest.fn() }));
 
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { exportFile } from "./exportFile";
 
