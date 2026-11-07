@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Button, SafeAreaView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Button, StatusBar, StyleSheet, Text, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { ProfileScreen } from "./src/features/profile/ProfileScreen";
 import { DataScreen } from "./src/features/profile/DataScreen";
@@ -14,6 +15,10 @@ import { mergeVisibleTrainingPlan } from "./src/features/training/rollingPlan";
 import { addWeightMeasurement, deleteWeightMeasurement, editWeightMeasurement } from "./src/features/weight/weightHistory";
 
 export default function App() {
+  return <SafeAreaProvider><PeakApp /></SafeAreaProvider>;
+}
+
+function PeakApp() {
   const today = useLocalDay();
   const [activeScreen, setActiveScreen] = useState<"today" | "profile" | "training" | "weight" | "data">("today");
   const [persistence] = useState(() => createLocalPersistence(deviceStorage));

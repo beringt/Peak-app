@@ -120,7 +120,7 @@ itself fails. Peak performs no network upload; the user chooses any external
 sharing destination.
 
 Expo FileSystem and Sharing support this native file flow at versions matching
-Expo 54; the existing filesystem API is imported from expo-file-system/legacy.
+Expo 58; native export uses the File/Paths API from expo-file-system.
 Native share behavior must still be verified on a physical
 iPhone in #26; browser tests and mocked native adapters are not device verification.
 
