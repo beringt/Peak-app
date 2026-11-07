@@ -1,8 +1,8 @@
-# Local data contract (version 2)
+# Local data contract (version 3)
 
 The app loads and saves this format through AsyncStorage at `@peak/local-data`.
 
-The JSON envelope is `{ version: 2, data: { profile, trainingPlan, weightEntries } }`.
+The JSON envelope is `{ version: 3, data: { profile, trainingPlan, weightEntries } }`.
 Use the existing profile and entry field names from `src/types/index.ts`.
 An empty installation is represented by a null profile and two empty arrays.
 Arrays preserve their order and every record; decoding never sorts, repairs,
@@ -19,8 +19,9 @@ rule consistently is part of #22, not an implicit migration in this issue.
 ## Explicit decoding and encoding outcomes
 
 - Only a missing storage key (`read()` returns null) yields `missing`.
-- A complete version-1 payload migrates in memory to version 2 and yields `valid`.
-- A complete version-2 payload yields `valid`.
+- A complete version-1 payload migrates in memory to version 3 and yields `valid`.
+- A complete version-2 payload migrates in memory to version 3 and yields `valid`.
+- A complete version-3 payload yields `valid`.
 - Malformed JSON yields `invalid` with reason `json`.
 - Missing fields, unknown fields, invalid values, duplicate identities, or invalid
   version metadata yield `invalid` with reason `schema`.
@@ -32,11 +33,11 @@ rule consistently is part of #22, not an implicit migration in this issue.
   silently become JSON null. Invalid input yields `invalid` instead of a payload.
 
 Version 1 retains its original strict three-field profile schema. Migration to
-version 2 retains that profile, all plan dates, weight IDs, order and values
+version 3 retains that profile, all plan dates, weight IDs, order and values
 without guessing new inputs. Absent `baselineInputs` (or null) means all optional
 inputs are unknown. No eager write occurs on load: the original version-1 string
 remains until a later validated user save succeeds. Failed validation blocks edits
-and preserves the original raw data. Successful saves and exports use version 2.
+and preserves the original raw data. Successful saves and exports use version 3.
 
 Version 2 additionally accepts optional profile `baselineInputs`, either null or
 an exact object with `heightCm`, `ageYears`, `equationVariant`,
@@ -58,6 +59,38 @@ migrations with fixtures for every supported prior version, validate the result,
 and preserve the original until migration and a replacement write succeed.
 Do not downgrade unsupported newer data. Unknown fields are rejected rather than
 silently dropped; schema extensions require an explicit version/migration policy.
+
+## Planned sessions (version 3)
+
+Version 3 adds optional `sessions` to each TrainingDay while retaining `date` and
+`type`. Legacy days without `sessions` remain losslessly representable. The pure
+`sessionsForDay` adapter yields one session with ID `legacy:<date>` and null
+`durationMinutes`/`intensity` for strength/endurance, or an empty list for rest.
+This deterministic lazy migration never invents details or changes record order.
+Saving the visible plan materializes session records; loading alone never writes.
+Original v1/v2 payloads cannot contain the new session fields.
+
+Each session has exactly `id`, `type` (strength/endurance), `durationMinutes`
+(null or finite 1–240 minutes), and `intensity` (null/low/moderate/high).
+Known durations must total at most 360 minutes per day; unknown durations remain
+unknown and do not imply that the actual total is within that limit. Session IDs
+must be nonblank and unique across all saved dates, including implicit legacy IDs.
+Date is owned by the parent day. Editing type/duration/intensity retains identity.
+An explicit `sessions: []` is rest. For compatibility with the current calculator,
+`day.type` equals the first session's type, or rest for an empty list. Additional
+sessions and details do not yet influence calorie/macronutrient calculations.
+
+An endurance session is classified long only when that individual continuous
+session is >90 minutes; multiple shorter sessions are not combined for this flag.
+Unknown endurance duration means unknown long-session status. An absent tomorrow
+is also unknown; explicit rest is false. This is a planning label, not a fuelling
+prescription or an implemented recommendation rule. Users enter separate,
+non-overlapping sessions; there are no timestamps or automatic overlap detection.
+
+The editor preserves drafts by local date during rollover; save merges only the
+current visible week and keeps past and distant-future days and session IDs.
+Clearing a day or removing a session is a draft until Save. Export includes the
+complete saved session data; confirmed reset removes it with all other local data.
 
 ## Storage boundary
 
