@@ -4,18 +4,19 @@ import { Button, ScrollView, StyleSheet, Text, TextInput, View } from "react-nat
 
 import type { WeightEntry } from "../../types";
 import { formatDateKey } from "../../utils/date";
-import { calculateWeightTrend } from "./calculateWeightTrend";
+import { calculateWeightEvidence } from "./calculateWeightEvidence";
 import { newestWeightMeasurements, validateWeightMeasurement } from "./weightHistory";
 import type { WeightMeasurement } from "./weightHistory";
 
 type WeightLogScreenProps = {
   weightEntries: WeightEntry[];
+  today: string;
   onAdd: (measurement: WeightMeasurement) => void;
   onUpdate: (id: string, measurement: WeightMeasurement) => void;
   onDelete: (id: string) => void;
 };
 
-export function WeightLogScreen({ weightEntries, onAdd, onUpdate, onDelete }: WeightLogScreenProps) {
+export function WeightLogScreen({ weightEntries, today, onAdd, onUpdate, onDelete }: WeightLogScreenProps) {
   const [weight, setWeight] = useState("");
   const [date, setDate] = useState(() => formatDateKey(new Date()));
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -52,7 +53,7 @@ export function WeightLogScreen({ weightEntries, onAdd, onUpdate, onDelete }: We
   }
 
   const recentEntries = newestWeightMeasurements(weightEntries);
-  const trend = calculateWeightTrend(weightEntries);
+  const evidence = calculateWeightEvidence(weightEntries, today);
 
   return (
     <ScrollView ref={scroll} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
@@ -109,7 +110,26 @@ export function WeightLogScreen({ weightEntries, onAdd, onUpdate, onDelete }: We
           ) : null}
         </View>
       ))}
-      <Text accessibilityLiveRegion="polite">Trend: {trend.direction}</Text>
+      <View style={styles.card} accessibilityLiveRegion="polite">
+        <Text style={styles.heading}>14-day weight trend</Text>
+        <Text>As of {evidence.asOfDate}; today's measurements are not included.</Text>
+        <Text>{evidence.previous.startDate} – {evidence.previous.endDate}: {evidence.previous.days.length}/7 measurement days</Text>
+        <Text>{evidence.recent.startDate} – {evidence.recent.endDate}: {evidence.recent.days.length}/7 measurement days</Text>
+        {evidence.status === "ready" ? (
+          <>
+            <Text>Observed rate: {Number(evidence.observedKgPerWeek!.toFixed(2)).toFixed(2)} kg/week</Text>
+            <Text>Window mean change: {Number(evidence.changeKg!.toFixed(2)).toFixed(2)} kg</Text>
+          </>
+        ) : <Text>Trend unavailable: {evidence.status === "insufficient-data" ? "insufficient data" : evidence.status === "stale-data" ? "stale measurements" : "measurements need review"}.</Text>}
+        {evidence.reasons.map(reason => (
+          <Text key={reason.code + (reason.window ?? "")}>
+            {reason.code === "insufficient-days" ? `At least 4 distinct measurement days are needed in the ${reason.window} window.` :
+              reason.code === "stale-weights" ? `Latest included measurement is ${evidence.latestIncludedDate}; a measurement within the last 2 completed days is needed.` :
+              `Same-day measurements differ by more than 2% of their median on ${reason.dates.join(", ")}. Review the original measurements; none have been removed.`}
+          </Text>
+        ))}
+        <Text>Uses one median per day. Missing days are not treated as zero. This evidence does not yet change calorie targets; Today retains its existing calculation.</Text>
+      </View>
     </ScrollView>
   );
 }

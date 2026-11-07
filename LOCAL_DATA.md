@@ -190,3 +190,37 @@ Successful reset returns to first use without writing an empty payload.
 Reset does not erase downloaded/shared exports, OS backups, other browser
 profiles/origins, or other app instances. Concurrent instances remain unsupported
 for this pilot; this is not account deletion or a claim of full GDPR compliance.
+
+## Weight evidence (#41)
+
+`calculateWeightEvidence(entries, asOfDate)` is a pure, version-tagged helper
+(`weight-evidence-v1`). It does not write storage or create/change recommendation
+history. Measurement records and schema version 3 are unchanged. The as-of date
+must be valid and at least 0001-01-15 so both completed windows are representable;
+invalid dates or invalid/duplicate measurements throw RangeError. The app passes
+its current local-day key, refreshed by the existing day clock.
+
+Only [D−14,D−1] is included, split into previous [D−14,D−8] and recent [D−7,D−1].
+Current-day, future and older entries remain stored but are excluded from this
+evidence. For each date, compute the median (mean of middle two for an even count),
+retain all record IDs and the min/max, then mean daily medians within each window.
+Missing dates are neither zeros nor repeated observations. Window centres are the
+mean calendar-day ordinal of observed dates; rate is mean-weight change ×7 divided
+by the actual centre gap. No intermediate rounding or local elapsed-hour/DST
+arithmetic is used. Ready results are shown to two decimals on Weight.
+
+Both windows require at least four distinct dates. The latest included date must
+be D−2 or later. A within-day spread strictly greater than 2% of that day's median
+is flagged; no reading is silently removed and no cross-day outlier filter is
+invented. Reasons carry codes, dates, source IDs and window identity where relevant.
+Status precedence is insufficient-data, stale-data, review-needed, ready, retaining
+all applicable reasons. No confidence percentage or causal explanation is inferred.
+Insufficient coverage returns null change/rate. With sufficient coverage, raw
+change/rate are retained for diagnostics even when stale/flagged; downstream
+proposals must require ready status and their separate review prerequisites.
+
+The Weight screen replaces its endpoint summary with this evidence and hides
+numeric rates when evidence is not ready. Today still uses its existing legacy
+endpoint-based calculation (including its existing adjustment). Wiring the new
+evidence into recommendations and weekly decisions belongs to #42/#44; #41 does
+not alter calorie targets or retrospectively reinterpret recommendations.

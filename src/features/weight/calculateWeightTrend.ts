@@ -1,5 +1,6 @@
 import type { WeightEntry, WeightTrend } from "../../types";
 
+/** Legacy endpoint feedback for the existing calorie calculator; not a weekly rate. */
 export function calculateWeightTrend(entries: WeightEntry[]): WeightTrend {
   if (entries.length < 2) {
     return { direction: "unknown", changeKg: 0, hasEnoughData: false };
