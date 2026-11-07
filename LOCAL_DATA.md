@@ -1,8 +1,8 @@
-# Local data contract (version 1)
+# Local data contract (version 2)
 
 The app loads and saves this format through AsyncStorage at `@peak/local-data`.
 
-The JSON envelope is `{ version: 1, data: { profile, trainingPlan, weightEntries } }`.
+The JSON envelope is `{ version: 2, data: { profile, trainingPlan, weightEntries } }`.
 Use the existing profile and entry field names from `src/types/index.ts`.
 An empty installation is represented by a null profile and two empty arrays.
 Arrays preserve their order and every record; decoding never sorts, repairs,
@@ -19,18 +19,39 @@ rule consistently is part of #22, not an implicit migration in this issue.
 ## Explicit decoding and encoding outcomes
 
 - Only a missing storage key (`read()` returns null) yields `missing`.
-- A complete version-1 payload yields `valid`.
+- A complete version-1 payload migrates in memory to version 2 and yields `valid`.
+- A complete version-2 payload yields `valid`.
 - Malformed JSON yields `invalid` with reason `json`.
 - Missing fields, unknown fields, invalid values, duplicate identities, or invalid
   version metadata yield `invalid` with reason `schema`.
 - Other positive safe-integer versions yield `unsupported-version` even if their
-  data shape differs from version 1.
+  data shape differs from the supported versions.
 - Invalid/unsupported decoding retains the original raw string. Treat that string
   as user data; do not put it in logs or telemetry.
 - Encoding validates before serializing, so NaN/Infinity or invalid data cannot
   silently become JSON null. Invalid input yields `invalid` instead of a payload.
 
-There is no pre-existing persisted format, so version 1 has no legacy migration.
+Version 1 retains its original strict three-field profile schema. Migration to
+version 2 retains that profile, all plan dates, weight IDs, order and values
+without guessing new inputs. Absent `baselineInputs` (or null) means all optional
+inputs are unknown. No eager write occurs on load: the original version-1 string
+remains until a later validated user save succeeds. Failed validation blocks edits
+and preserves the original raw data. Successful saves and exports use version 2.
+
+Version 2 additionally accepts optional profile `baselineInputs`, either null or
+an exact object with `heightCm`, `ageYears`, `equationVariant`,
+`manualMaintenanceKcal`, `targetRatePercentPerWeek`. Each may be null except that
+a supplied inputs object for maintenance must have target rate 0. Height is
+100–250 cm; age is an integer 19–78; variant is `plus5`/`minus161`/null;
+manual maintenance is finite, greater than 0 and at most 10,000 kcal/day excluding
+training; target rate is a magnitude 0–0.5 percent/week with direction from goal.
+These input bounds were owner-approved for #39; they are not universal clinical
+limits. Partial inputs are valid. There is no inferred physiology or default rate.
+
+Profile drafts are local until Save. Invalid drafts do not invoke persistence.
+The current legacy recommendation calculator ignores all new inputs. Skipping
+them keeps the existing weight/goal/activity-based fallback. The new details are
+not yet an active personalized baseline or weekly adjustment model.
 Unversioned JSON is invalid; do not infer a schema or silently convert it.
 For future schema changes, increment the version, add explicit sequential
 migrations with fixtures for every supported prior version, validate the result,

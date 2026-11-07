@@ -1,4 +1,13 @@
+export type ProfileInputs = {
+  heightCm: number | null;
+  ageYears: number | null;
+  equationVariant: "plus5" | "minus161" | null;
+  manualMaintenanceKcal: number | null;
+  targetRatePercentPerWeek: number | null;
+};
+
 export type UserProfile = {
+  baselineInputs?: ProfileInputs | null;
   weight: number;
   goal: "lose" | "maintain" | "gain";
   activityLevel: "low" | "medium" | "high";

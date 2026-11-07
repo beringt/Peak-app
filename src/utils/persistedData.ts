@@ -1,7 +1,8 @@
 import type { PeakData } from "../types";
+import { validProfileInputs } from "../features/profile/profileInputs";
 import { isDateKey } from "./date";
 
-export const PEAK_DATA_VERSION = 1 as const;
+export const PEAK_DATA_VERSION = 2 as const;
 
 export type PersistedPeakData = {
   version: typeof PEAK_DATA_VERSION;
@@ -40,12 +41,14 @@ function positiveWeight(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-function validData(value: unknown): value is PeakData {
+function validData(value: unknown, legacy = false): value is PeakData {
   if (!record(value) || !hasKeys(value, ["profile", "trainingPlan", "weightEntries"])) return false;
   const { profile, trainingPlan, weightEntries } = value;
   if (profile !== null && (
     !record(profile) ||
-    !hasKeys(profile, ["weight", "goal", "activityLevel"]) ||
+    !(hasKeys(profile, ["weight", "goal", "activityLevel"]) || (!legacy &&
+      hasKeys(profile, ["weight", "goal", "activityLevel", "baselineInputs"]) &&
+      (profile.baselineInputs === null || validProfileInputs(profile.baselineInputs, profile.goal)))) ||
     !positiveWeight(profile.weight) ||
     !["lose", "maintain", "gain"].includes(profile.goal as string) ||
     !["low", "medium", "high"].includes(profile.activityLevel as string)
@@ -82,10 +85,10 @@ export function decodePersistedData(raw: string | null): DecodeResult {
     (parsed.version as number) < 1) {
     return { status: "invalid", reason: "schema", raw };
   }
-  if (parsed.version !== PEAK_DATA_VERSION) {
+  if (parsed.version !== 1 && parsed.version !== PEAK_DATA_VERSION) {
     return { status: "unsupported-version", version: parsed.version as number, raw };
   }
-  if (!hasKeys(parsed, ["version", "data"]) || !validData(parsed.data)) {
+  if (!hasKeys(parsed, ["version", "data"]) || !validData(parsed.data, parsed.version === 1)) {
     return { status: "invalid", reason: "schema", raw };
   }
   return { status: "valid", value: { version: PEAK_DATA_VERSION, data: parsed.data } };

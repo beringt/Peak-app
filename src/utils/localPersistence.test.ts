@@ -84,7 +84,7 @@ test.each([false, true])("read failure is retryable, including synchronous failu
 test.each([
   { stored: "{broken", phase: "invalid-data" },
   { stored: '{"version":1,"data":{}}', phase: "invalid-data" },
-  { stored: '{"version":2,"data":{"future":"keep"}}', phase: "unsupported-version" },
+  { stored: '{"version":3,"data":{"future":"keep"}}', phase: "unsupported-version" },
 ])("protects $phase data from edits, retries and autosaving", async ({ stored, phase }) => {
   const storage = storageMock();
   storage.read.mockResolvedValue(stored);

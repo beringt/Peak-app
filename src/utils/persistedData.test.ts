@@ -26,7 +26,7 @@ test("round-trips all saved data, order, IDs and multiple same-day weights", () 
   expect(encoded.status).toBe("valid");
   if (encoded.status !== "valid") throw new Error("Encoding failed");
   expect(decodePersistedData(encoded.raw)).toEqual({
-    status: "valid", value: { version: 1, data },
+    status: "valid", value: { version: 2, data },
   });
   expect(JSON.stringify(data)).toBe(before);
 });
@@ -34,7 +34,7 @@ test("round-trips all saved data, order, IDs and multiple same-day weights", () 
 test("accepts an explicitly empty dataset", () => {
   const data = { profile: null, trainingPlan: [], weightEntries: [] };
   expect(decodePersistedData(envelope(data))).toEqual({
-    status: "valid", value: { version: 1, data },
+    status: "valid", value: { version: 2, data },
   });
 });
 
@@ -61,7 +61,7 @@ test.each([0, -1, 1.5, "1", null, 9007199254740992])(
   }
 );
 
-test.each([2, 99])("preserves unsupported version %i without assuming its data shape", (version) => {
+test.each([3, 99])("preserves unsupported version %i without assuming its data shape", (version) => {
   const raw = envelope({ newFormat: ["keep", "everything"] }, version);
   expect(decodePersistedData(raw)).toEqual({ status: "unsupported-version", version, raw });
 });
@@ -115,7 +115,7 @@ test.each(["2000-02-29", "2028-02-29", "0001-01-01", "9999-12-31"])(
     data.trainingPlan[0].date = date;
     data.weightEntries[0].date = date;
     expect(decodePersistedData(envelope(data))).toEqual({
-      status: "valid", value: { version: 1, data },
+      status: "valid", value: { version: 2, data },
     });
   }
 );
@@ -169,6 +169,6 @@ test("preserves valid boundary values and existing positive profile weights", ()
   const encoded = encodePersistedData(data);
   if (encoded.status !== "valid") throw new Error("Encoding failed");
   expect(decodePersistedData(encoded.raw)).toEqual({
-    status: "valid", value: { version: 1, data },
+    status: "valid", value: { version: 2, data },
   });
 });
