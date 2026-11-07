@@ -103,34 +103,46 @@ Ejer har oplyst Expo Go 58.0.5 / Supported SDK 58.0.0. Udfyld før native result
 
 | Felt | Værdi |
 | --- | --- |
-| Dato og tester | Afventer |
+| Dato og tester | 7. november 2026, ejerens resultater rapporteret i chat |
 | iPhone-model | Afventer |
 | iOS-version inkl. patch | iOS 27 oplyst; præcis version afventer |
 | Expo Go-version/build | 58.0.5 / Supported SDK 58.0.0, oplyst af ejer |
 | Peak Git-commit | `git rev-parse HEAD` i det Codespace, der testes |
 | Node-version | `node --version` |
-| Kørsel | Native Expo Go eller Safari/web; må ikke sammenblandes |
+| Kørsel | Native Expo Go rapporteret; Safari-test holdes særskilt |
 | Netværk/forbindelse | Tunnel og eventuelle fejl |
 
 ### Kontrolleret i udviklingsmiljøet
 
-Kandidatændringen til SDK 58: se PR-valideringen for de udførte automatiske
-kontroller og browserregressioner. Fysisk iPhone-afprøvning afventer.
+SDK 58: se PR #37 for de automatiske kontroller og browserregressioner.
+Ejer har efter opgraderingen bekræftet, at appen åbner på fysisk iPhone.
 
 Historisk: SDK 54-tunnelen blev forbundet i ejerens Codespace, men Expo Go
 lukkede ved åbning. Det blev derefter konstateret, at klienten var 58.0.5 og
 kun understøttede SDK 58. Den tidligere SDK 54-test dokumenterer derfor hverken
 SDK 58-forbindelse eller en fungerende native app.
 
-### Fysisk iPhone: afventer ejerens afprøvning
+### Ejer-rapporterede native resultater
+
+- Data bevares efter helt at lukke og genåbne Expo Go.
+- Eksporten kan gemmes i Arkiver og åbnes. Præcis kontrol af alle filfelter
+  er ikke særskilt rapporteret.
+- Tilføjelse af en historisk vægtmåling, redigering og annulleret/bekræftet
+  sletning fungerer.
+- Gemte valg mellem Strength og Endurance opdaterer Today og kalorietallet.
+
+Dette er ejerens afprøvning; uafprøvede delkrav er stadig markeret nedenfor.
+Piloten er ikke afsluttet, og model/fuld OS-version/konkret test-commit mangler.
+
+### Detaljeret fysisk iPhone-tjekliste
 
 - [ ] Første brug: profil er ikke gemt automatisk.
 - [ ] Gem profil; ændr mål/aktivitet; ugyldig vægt erstatter ikke gemte værdier.
-- [ ] Gem ugeplan; ændring påvirker Today efter gemning.
+- [x] Gem ugeplan; ændring påvirker Today efter gemning (ejer-rapporteret).
 - [ ] Tilføj vægt i dag og på en tidligere dato; fremtid/ugyldig dato afvises.
 - [ ] Redigér vægt/dato; annullér en redigering; kontrollér samme måling.
 - [ ] Annullér sletning; bekræft en sletning; kontrollér Today.
-- [ ] Luk Expo Go helt og genåbn samme Peak-projekt: gemte data er bevaret.
+- [x] Luk Expo Go helt og genåbn samme Peak-projekt: gemte data er bevaret (ejer-rapporteret).
 - [ ] Eksportér til Arkiver; åbn JSON og kontrollér data/version/tidspunkt.
 - [ ] Annullér deling; appen påstår ikke, at en fil blev gemt.
 - [ ] Annullér nulstilling: data bevares.
