@@ -2,6 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { Button, SafeAreaView, StatusBar, StyleSheet, Text, View } from "react-native";
 
 import { ProfileScreen } from "./src/features/profile/ProfileScreen";
+import { DataScreen } from "./src/features/profile/DataScreen";
 import { DailyRecommendationScreen } from "./src/features/recommendation/DailyRecommendationScreen";
 import { TrainingPlanScreen } from "./src/features/training/TrainingPlanScreen";
 import { WeightLogScreen } from "./src/features/weight/WeightLogScreen";
@@ -14,11 +15,16 @@ import { addWeightMeasurement, deleteWeightMeasurement, editWeightMeasurement } 
 
 export default function App() {
   const today = useLocalDay();
-  const [activeScreen, setActiveScreen] = useState<"today" | "profile" | "training" | "weight">("today");
+  const [activeScreen, setActiveScreen] = useState<"today" | "profile" | "training" | "weight" | "data">("today");
   const [persistence] = useState(() => createLocalPersistence(deviceStorage));
   const saved = useSyncExternalStore(persistence.subscribe, persistence.getSnapshot, persistence.getSnapshot);
   useEffect(() => { void persistence.load(); }, [persistence]);
   const { profile, trainingPlan, weightEntries } = saved.data;
+  async function resetData() {
+    const success = await persistence.reset();
+    if (success) setActiveScreen("today");
+    return success;
+  }
 
   if (saved.phase !== "ready") {
     const messages = {
@@ -26,13 +32,16 @@ export default function App() {
       "read-error": "Your saved data could not be loaded. Please try again.",
       "invalid-data": "Your saved data could not be read. It has been kept unchanged.",
       "unsupported-version": "Your saved data needs a different app version. It has been kept unchanged.",
+      resetting: "Resetting your data…",
+      "reset-error": "Could not confirm deletion. Your session has been kept. Retry the reset below.",
     };
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.storageNotice}>
           <Text accessibilityLiveRegion="polite">{messages[saved.phase]}</Text>
-          {saved.phase !== "loading" ? <Button title="Retry loading" onPress={() => { void persistence.load(); }} /> : null}
+          {saved.phase !== "loading" && saved.phase !== "resetting" && saved.phase !== "reset-error" ? <Button title="Retry loading" onPress={() => { void persistence.load(); }} /> : null}
         </View>
+        {saved.phase !== "loading" ? <DataScreen data={saved.data} exportAllowed={false} resetting={saved.phase === "resetting"} onReset={resetData} /> : null}
       </SafeAreaView>
     );
   }
@@ -50,6 +59,7 @@ export default function App() {
         </Text>
         {saved.saveStatus === "error" ? <Button title="Retry saving" onPress={persistence.retrySave} /> : null}
       </View>
+      <Button title="Data" onPress={() => setActiveScreen("data")} />
       <View style={styles.buttons}>
         {(["today", "profile", "training", "weight"] as const).map((screen) => (
           <Button
@@ -93,6 +103,14 @@ export default function App() {
           onDelete={(id) => persistence.update((data) => ({
             ...data, weightEntries: deleteWeightMeasurement(data.weightEntries, id),
           }))}
+        />
+      ) : null}
+      {activeScreen === "data" ? (
+        <DataScreen
+          data={saved.data}
+          exportAllowed={saved.saveStatus === "idle" || saved.saveStatus === "saved"}
+          resetting={false}
+          onReset={resetData}
         />
       ) : null}
     </SafeAreaView>

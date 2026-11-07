@@ -71,8 +71,8 @@ depends on the platform. A crash/close before a write completes may lose that ch
 Concurrent tabs/app instances are not synchronized or protected against conflicting
 writes; use one instance for this pilot.
 
-The adapter exposes remove for the future explicit reset flow; this issue adds
-no automatic deletion, reset UI, import or migration of unversioned data.
+The adapter exposes key-scoped removal for explicit reset. No data is
+automatically deleted or migrated from an unversioned format.
 
 ## Weight history
 
@@ -100,3 +100,38 @@ AppState activation, and on web focus/visible events. A once-per-minute fallback
 catches clock changes. No rollover or resume event writes data by itself.
 Historical records are retained in storage; this issue adds no history browser,
 recurrence, workouts or changes to recommendation formulas.
+
+## Export and reset
+
+Data opens a separate control screen. Export is enabled only after loading and
+successful completion of committed saves. The JSON export contains schema
+`version`, `exportedAt` (UTC ISO timestamp), and the complete `data` snapshot,
+including training history. Draft form edits are excluded. This is an export
+format, not an importable storage envelope; no import flow is implemented.
+
+Web requests a browser download using a local Blob and releases its object URL.
+The browser decides where/how to save and may allow cancellation; requesting a
+download is not proof that a file was saved. Native uses Expo FileSystem to write
+a temporary cache file, Expo Sharing to open the OS share sheet, then deletes the
+temporary file on sheet completion or failure. Share-sheet completion does not
+distinguish cancellation from saving. Cleanup failure is surfaced as an export
+failure; a temporary cache file may remain if the process crashes or deletion
+itself fails. Peak performs no network upload; the user chooses any external
+sharing destination.
+
+Expo FileSystem and Sharing are added for this native file flow at versions
+matching Expo 53. Native share behavior must still be verified on a physical
+iPhone in #26; browser tests and mocked native adapters are not device verification.
+
+Reset requires a second confirmation and affects only this app's local storage
+key. It is available even for unreadable/unsupported data, after confirmation.
+The coordinator invalidates older reads/writes, blocks new edits/retries,
+discards queued snapshots, waits for an active write to settle, then removes the
+key. Memory clears only after removal succeeds. Failed removal keeps the session,
+blocks autosaving, and offers an explicit reset retry. Keep the app open until
+reset completes; closing before completion may leave existing data on the device.
+Successful reset returns to first use without writing an empty payload.
+
+Reset does not erase downloaded/shared exports, OS backups, other browser
+profiles/origins, or other app instances. Concurrent instances remain unsupported
+for this pilot; this is not account deletion or a claim of full GDPR compliance.

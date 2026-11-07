@@ -2,7 +2,7 @@ import type { PeakData } from "../types";
 import { decodePersistedData, encodePersistedData } from "./persistedData";
 import type { PeakStorage } from "./persistedData";
 
-type Phase = "loading" | "ready" | "read-error" | "invalid-data" | "unsupported-version";
+type Phase = "loading" | "ready" | "read-error" | "invalid-data" | "unsupported-version" | "resetting" | "reset-error";
 export type PersistenceSnapshot = {
   phase: Phase;
   data: PeakData;
@@ -24,6 +24,9 @@ export function createLocalPersistence(storage: PeakStorage) {
   let revision = 0;
   let savedRevision = 0;
   let latestRaw: string | null = null;
+  let generation = 0;
+  let pendingWrite: Promise<void> | null = null;
+  let resetPromise: Promise<boolean> | null = null;
 
   function publish(change: Partial<PersistenceSnapshot>) {
     snapshot = { ...snapshot, ...change };
@@ -31,12 +34,15 @@ export function createLocalPersistence(storage: PeakStorage) {
   }
 
   function load(): Promise<void> {
+    if (snapshot.phase === "resetting" || snapshot.phase === "reset-error") return Promise.resolve();
     if (loadPromise) return loadPromise;
     if (snapshot.phase === "ready") return Promise.resolve();
     publish({ phase: "loading" });
+    const loadingGeneration = generation;
     loadPromise = Promise.resolve().then(async () => {
       try {
         const result = decodePersistedData(await storage.read());
+        if (generation !== loadingGeneration) return;
         if (result.status === "valid") {
           publish({ phase: "ready", data: result.value.data });
         } else if (result.status === "missing") {
@@ -45,7 +51,7 @@ export function createLocalPersistence(storage: PeakStorage) {
           publish({ phase: result.status === "invalid" ? "invalid-data" : "unsupported-version" });
         }
       } catch {
-        publish({ phase: "read-error" });
+        if (generation === loadingGeneration) publish({ phase: "read-error" });
       } finally {
         loadPromise = null;
       }
@@ -59,15 +65,19 @@ export function createLocalPersistence(storage: PeakStorage) {
     writing = true;
     const writingRevision = revision;
     const raw = latestRaw;
+    const writingGeneration = generation;
+    pendingWrite = (async () => storage.write(raw))();
     try {
-      await storage.write(raw);
+      await pendingWrite;
+      if (generation !== writingGeneration) return;
       savedRevision = writingRevision;
       if (revision === writingRevision) publish({ saveStatus: "saved" });
     } catch {
-      publish({ saveStatus: "error", saveError: snapshot.saveError ?? "write" });
+      if (generation === writingGeneration) publish({ saveStatus: "error", saveError: snapshot.saveError ?? "write" });
     } finally {
       writing = false;
-      if (!snapshot.saveError && savedRevision !== revision) void flush();
+      pendingWrite = null;
+      if (generation === writingGeneration && !snapshot.saveError && savedRevision !== revision) void flush();
     }
   }
 
@@ -94,6 +104,36 @@ export function createLocalPersistence(storage: PeakStorage) {
     void flush();
   }
 
+  /** Call only after explicit confirmation. Drain old writes before removing their key. */
+  function reset(): Promise<boolean> {
+    if (resetPromise) return resetPromise;
+    generation += 1;
+    latestRaw = null;
+    const oldWrite = pendingWrite;
+    publish({ phase: "resetting", saveStatus: "idle", saveError: null });
+    resetPromise = Promise.resolve().then(async () => {
+      try {
+        await oldWrite?.catch(() => {});
+        await storage.remove();
+        revision = 0;
+        savedRevision = 0;
+        publish({
+          phase: "ready",
+          data: { profile: null, trainingPlan: [], weightEntries: [] },
+          saveStatus: "idle",
+          saveError: null,
+        });
+        return true;
+      } catch {
+        publish({ phase: "reset-error" });
+        return false;
+      } finally {
+        resetPromise = null;
+      }
+    });
+    return resetPromise;
+  }
+
   return {
     getSnapshot: () => snapshot,
     subscribe(listener: () => void) {
@@ -103,5 +143,6 @@ export function createLocalPersistence(storage: PeakStorage) {
     load,
     update,
     retrySave,
+    reset,
   };
 }
