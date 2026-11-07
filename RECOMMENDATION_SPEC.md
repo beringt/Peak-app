@@ -1,7 +1,9 @@
 # Peak recommendations v2 — review draft
 
-Status: proposal for issue #38, not active app behavior. Owner review and the
-domain decisions in section 10 are required before dependent implementation.
+Status: specification for issue #38, not active app behavior. Product principles
+were approved by the owner on 7 November 2026 (section 10.1). Numerical defaults
+and unresolved domain decisions in section 10 still require review before their
+dependent implementation.
 Mathematical examples verify the proposed arithmetic, not individual effectiveness.
 Population: adult recreational strength/endurance users; this is not a clinical,
 pregnancy, adolescent or elite-event nutrition model.
@@ -355,6 +357,40 @@ mapping need review. The proposal does not diagnose energy deficiency or infer
 sleep/recovery. Those inputs and clinical decisions are outside this phase.
 Until the relevant gates are settled, dependent issues may refine designs but
 must not silently activate these numerical rules.
+
+### 10.1 Owner-approved product principles — 7 November 2026
+
+The owner approved an initial baseline refined over time, multiple sessions per
+day with planned and completed work separate, at least two weeks of weight
+observations for trend review, explicit user acceptance of weekly calorie
+changes, and a foundation for later detailed strength/endurance programs.
+This approval does not select every numerical default in D1–D5 or resolve the
+exact profile fields, ranges and units required by #39.
+
+### 10.2 Actual data and evaluation
+
+The owner requires actual activity and actual nutrition intake for a meaningful
+evaluation of recommendations. Future sources include Apple Health for activity
+and MyFitnessPal (if provider access permits) or Peak food logging for intake.
+These integrations are future work; their availability is not assumed.
+
+Keep recommended targets, planned work, completed activity and logged intake
+separate. Weight change alone cannot establish adherence, explain a discrepancy,
+or demonstrate recommendation effectiveness. Imported energy expenditure remains
+an estimate; even a food log may be incomplete. Manual confirmation in the first
+version supports a limited review, not verified adherence or causal conclusions.
+
+Future evaluation must record source, observation time, covered dates and known
+completeness. Missing activity/intake is unknown, never zero. Deduplicate records
+across providers and match actual sessions to plans before replacing exercise
+estimates; do not add both planned and actual energy for the same session or
+add exercise again to a total expenditure that already includes it. Preserve
+original records and the inputs used by each historical recommendation.
+
+Example: a weight plateau with missing food logs must not be explained as proof
+that the calorie target was too high. A planned ride plus an Apple Health record
+for that ride represents one session, not two. These are requirements for later
+integration/evaluation tasks, not permission to implement imports in #39.
 
 ## Sources and limits
 
