@@ -14,12 +14,17 @@ Vi udvider efter faktisk brug. At erstatte MyFitnessPal, Strong og andre apps er
 
 ## Nuværende fundament
 
-- Expo/React Native/TypeScript med Today, Profile, Training og Weight.
+- Expo SDK 58/React Native/TypeScript med Today, Profile, Training, Weight og Data.
 - Enkel regelmotor for kalorier/makroer, træningstype og vægttrend.
-- 28 automatiske tests samt TypeScript-kontrol.
-- Manuel webafprøvning; endnu ikke verificeret som native iPhone-app.
-- Data ligger i hukommelsen og forsvinder ved genstart.
-- Ingen konti, backend, sundhedsimport eller AI-service.
+- 181 automatiske tests samt TypeScript-kontrol ved seneste kompatibilitetsændring.
+- Lokal lagring, redigering/sletning af vægtmålinger, historikbevarende ugeplan,
+  JSON-eksport og bekræftet nulstilling er implementeret.
+- Ejer har bekræftet native iPhone-start, data efter genstart, eksport til Arkiver,
+  vægthåndtering og opdatering af Today efter gemt træningsplan.
+- Fase 1-piloten er fortsat åben i #26: bl.a. nulstilling, faktisk dagskifte,
+  fuld enhedsmetadata og brug over flere uger afventer. Fase 2 kan planlægges
+  sideløbende uden at erklære fase 1 afsluttet.
+- Ingen Peak-brugerkonti, backend, sundhedsimport eller AI-service.
 
 ## Leverancefaser
 
@@ -96,6 +101,22 @@ Coachfunktioner kræver selvstændige roller, samtykker og adgangsregler. AI-for
 7. [#26: Native iPhone og samlet pilot](https://github.com/beringt/Peak-app/issues/26), afhænger af #21–#25.
 
 iPhone-distributionsmuligheder og eventuelle omkostninger kan undersøges tidligt. Køb eller betalte tjenester kræver særskilt accept.
+
+## Fase 2: rækkefølge og GitHub-opgaver
+
+Detaljer og afhængigheder findes i [PHASE_2.md](PHASE_2.md).
+
+1. [#38: Beregningsspecifikation og referenceeksempler](https://github.com/beringt/Peak-app/issues/38).
+2. [#39: Udvidet profil og sikker datamigration](https://github.com/beringt/Peak-app/issues/39).
+3. [#40: Træningsvarighed, intensitet og lange pas](https://github.com/beringt/Peak-app/issues/40).
+4. [#41: Vægttrend og tydelig datakvalitet](https://github.com/beringt/Peak-app/issues/41).
+5. [#42: Versioneret anbefalingsmotor](https://github.com/beringt/Peak-app/issues/42).
+6. [#43: Historiske anbefalinger med input og begrundelser](https://github.com/beringt/Peak-app/issues/43).
+7. [#44: Kontrollerede ugejusteringer og låste mål](https://github.com/beringt/Peak-app/issues/44).
+8. [#45: Forklaringer i Today og samlet afprøvning](https://github.com/beringt/Peak-app/issues/45).
+
+Implementering afhænger af de relevante afklarede regler i #38. Nye regler
+aktiveres ikke alene ved at tilføje felter til brugerfladen.
 
 ## Arbejdsform
 
