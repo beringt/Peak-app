@@ -5,9 +5,13 @@ import type { WeightEntry } from "../../types";
 import { formatDateKey } from "../../utils/date";
 import { calculateWeightTrend } from "./calculateWeightTrend";
 
-export function WeightLogScreen() {
+type WeightLogScreenProps = {
+  weightEntries: WeightEntry[];
+  onAdd: (entry: WeightEntry) => void;
+};
+
+export function WeightLogScreen({ weightEntries, onAdd }: WeightLogScreenProps) {
   const [weight, setWeight] = useState("");
-  const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
 
   function addWeight() {
@@ -22,7 +26,7 @@ export function WeightLogScreen() {
       date: formatDateKey(new Date()),
       weightKg: parsedWeight,
     };
-    setWeightEntries((entries) => [...entries, entry]);
+    onAdd(entry);
     setWeight("");
     setErrorMessage("");
   }

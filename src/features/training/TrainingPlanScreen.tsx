@@ -10,9 +10,17 @@ const trainingLabels: Record<TrainingDay["type"], string> = {
   rest: "Rest",
 };
 
-export function TrainingPlanScreen() {
+type TrainingPlanScreenProps = {
+  savedPlan: TrainingDay[];
+  onSave: (plan: TrainingDay[]) => void;
+};
+
+export function TrainingPlanScreen({ savedPlan, onSave }: TrainingPlanScreenProps) {
   const [trainingPlan, setTrainingPlan] = useState<TrainingDay[]>(() =>
-    getNextSevenDateKeys().map((date) => ({ date, type: "rest" }))
+    getNextSevenDateKeys().map((date) => ({
+      date,
+      type: savedPlan.find((day) => day.date === date)?.type ?? "rest",
+    }))
   );
   const [confirmationMessage, setConfirmationMessage] = useState("");
 
@@ -43,7 +51,10 @@ export function TrainingPlanScreen() {
       ))}
       <Button
         title="Save Training Plan"
-        onPress={() => setConfirmationMessage("Training plan saved.")}
+        onPress={() => {
+          onSave(trainingPlan);
+          setConfirmationMessage("Training plan saved.");
+        }}
       />
       {confirmationMessage ? (
         <Text accessibilityLiveRegion="polite">{confirmationMessage}</Text>
