@@ -23,7 +23,7 @@ function tomorrowKey(today: string): string {
   return calendar.toISOString().slice(0, 10);
 }
 
-/** Experimental pure arithmetic only. Not wired to Today or persistence. */
+/** Experimental pure arithmetic; opt-in callers capture/display results separately from Existing Today. */
 export function calculateDailyTargetsV2(input: DailyEngineInput): DailyEngineResult {
   const result: DailyEngineResult = {
     ruleVersion: input.ruleVersion, asOfDate: input.asOfDate, timeZone: input.timeZone,

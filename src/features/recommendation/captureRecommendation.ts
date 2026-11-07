@@ -31,7 +31,7 @@ export function captureLegacyRecommendation(data: PeakData, context: SnapshotCon
   return { ...data, recommendationSnapshots: appendRecommendationSnapshot(history, context, "live", legacy.ruleVersion, input, result) };
 }
 
-/** Experimental v2 snapshots never replace the live v1 stream or activate Today. */
+/** Experimental v2 snapshots stay separate from the live v1 stream, including in optional Today views. */
 export function captureExperimentalRecommendation(data: PeakData, request: DailyEngineInput, context: SnapshotContext): PeakData {
   if (!validSnapshotContext(context) || request.asOfDate !== context.localDate || request.timeZone !== context.timeZone || request.ruleVersion !== DAILY_V2_RULE_VERSION) {
     throw new RangeError("Experimental snapshot context/version mismatch.");

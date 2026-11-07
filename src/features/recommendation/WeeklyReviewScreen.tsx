@@ -23,7 +23,7 @@ const messages: Record<string, string> = {
   "adjustment-cap-reached": "The cumulative adjustment limit has been reached.",
   "lower-bound-review-required": "A reviewed lower bound is missing or the proposal falls below it. The change is held.",
   "proposed-targets-infeasible": "The proposed change cannot satisfy all target constraints. Resolve the conflict before applying it.",
-  "adjustment-accepted": "Accepted for the experimental model only; it does not change Today.",
+  "adjustment-accepted": "Accepted for the experimental model only; it does not change Existing Today.",
   "proposal-declined": "Declined. The experimental adjustment has not changed.",
   "manual-acceptance-required": "This is a proposal. Nothing changes until you accept it.",
   "profile-outside-model": "Your saved profile is outside this experimental model's range. Keep using the existing calculator or review the profile inputs.",
@@ -105,7 +105,7 @@ export function WeeklyReviewScreen({ data, context, saveStatus, onSettings, onEv
 
   return <ScrollView ref={scroll} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
     <Text style={styles.title}>Weekly Review — Experimental</Text>
-    <Text style={styles.help}>This test area does not change Today. Accepted adjustments affect only the experimental model. All changes require your acceptance.</Text>
+    <Text style={styles.help}>This test area does not change Existing Today. Accepted adjustments affect the experimental preview and Experimental Today. All changes require your acceptance.</Text>
     <Text style={styles.help}>Review cutoff: Monday {period}. The two completed weeks before that date are used, even if you open this later in the week.</Text>
     <Text style={styles.help}>This uses planned activity and your confirmations. Actual food and activity imports are not available. Weight alone cannot explain why results differ.</Text>
     {error ? <Text accessibilityRole="alert">{error}</Text> : null}
@@ -145,7 +145,7 @@ export function WeeklyReviewScreen({ data, context, saveStatus, onSettings, onEv
         {daily.targets.energyKcal} kcal/day; approximately {Math.round(daily.targets.proteinGrams)} g protein, {Math.round(daily.targets.fatGrams)} g fat and {Math.round(daily.targets.carbsGrams)} g carbohydrate.
       </Text> : <Text>Preview held. Complete the inputs or resolve constraints.</Text>}
       {daily?.reasons.filter(r => messages[r.code] && (daily.status !== "ready" || ["energy-lock-preserved", "preparation-held", "preparation-partial", "tomorrow-preparation-unknown"].includes(r.code))).map((r, i) => <Text key={i}>{messages[r.code]}</Text>)}
-      <Text style={styles.help}>Saved experimental adjustment: {data.weeklyReview?.basis.offsetKcal ?? 0} kcal/day. This is separate from Today.</Text>
+      <Text style={styles.help}>Saved experimental adjustment: {data.weeklyReview?.basis.offsetKcal ?? 0} kcal/day. This is separate from Existing Today.</Text>
     </View>
     <View style={styles.card}>
       <Check label="The review-period weight measurements are reliable" value={reliable} onChange={setReliable} />
@@ -153,7 +153,7 @@ export function WeeklyReviewScreen({ data, context, saveStatus, onSettings, onEv
       <Button title="Evaluate Weekly Proposal" disabled={!readyToAct} onPress={() => setError(onEvaluate(confirmations) ?? "")} />
       {record ? <View>
         <Text style={styles.help}>Saved review: {record.periodStart}; {record.status.replaceAll("-", " ")}. Preview date: {String(record.input.asOfDate)}.</Text>
-        {Array.isArray(record.input.priorRecommendationIds) ? <Text>Prior target records available: {record.input.priorRecommendationIds.length}/14 days. Missing records are not reconstructed; adherence still relies on your confirmation.</Text> : null}
+        {Array.isArray(record.input.priorRecommendationIds) ? <Text>Saved target days available: {typeof record.input.priorRecommendationDays === "number" ? record.input.priorRecommendationDays : record.input.priorRecommendationIds.length}/14. Existing and experimental records may be included; they do not verify which targets were followed. Missing records are not reconstructed.</Text> : null}
         {Array.isArray(previous.days) && Array.isArray(recent.days) ? <Text>Measurement days: {previous.days.length}/7 in the previous week, {recent.days.length}/7 in the recent week.</Text> : null}
         {typeof record.result.baselineKcal === "number" ? <Text>Baseline used: {format(record.result.baselineKcal)} kcal/day. Step: {String(record.result.stepKcal)} kcal/day. Total cap: ±{String(record.result.offsetCapKcal)} kcal/day.</Text> : null}
         {typeof record.result.toleranceKgPerWeek === "number" ? <Text>No-change tolerance: approximately ±{format(record.result.toleranceKgPerWeek)} kg/week around the target.</Text> : null}
@@ -161,7 +161,7 @@ export function WeeklyReviewScreen({ data, context, saveStatus, onSettings, onEv
         {record.proposedOffsetKcal !== null ? <Text>{record.status === "proposed" ? "Proposed" : "Recorded candidate"} daily change: {record.proposedOffsetKcal - record.oldOffsetKcal} kcal/day; total adjustment {record.proposedOffsetKcal} kcal/day.</Text> : null}
         {reasons.map((r, i) => <Text key={i}>{messages[String(object(r).code)] ?? "Review the inputs and experimental limits before changing targets."}</Text>)}
         {Array.isArray(evidence.reasons) ? evidence.reasons.map((r, i) => <Text key={i}>{messages[String(object(r).code)] ?? "Weight data needs review."}</Text>) : null}
-        {record.status === "accepted" ? <Text style={styles.help}>{saveStatus === "saving" || saveStatus === "error" ? "Acceptance is pending device save. Check the status and retry above." : "Accepted for the experimental model only. This period will not be applied again; Today is unchanged."}</Text> : null}
+        {record.status === "accepted" ? <Text style={styles.help}>{saveStatus === "saving" || saveStatus === "error" ? "Acceptance is pending device save. Check the status and retry above." : "Accepted for the experimental model only. This period will not be applied again; Existing Today is unchanged."}</Text> : null}
         {record.status === "proposed" && !proposalFresh ? <Text>Inputs or settings changed since this proposal. Evaluate again before accepting.</Text> : null}
         <Button title="Accept Experimental Adjustment" disabled={!readyToAct || !reliable || !followed || !proposalFresh || record.status !== "proposed"} onPress={() => setError(onDecision(record.id, "accept", confirmations) ?? "")} />
         <Button title="Decline Proposal" disabled={!readyToAct || record.status !== "proposed"} onPress={() => setError(onDecision(record.id, "decline", confirmations) ?? "")} />

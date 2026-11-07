@@ -81,12 +81,12 @@ export function calculateWeeklyReview(data: PeakData, confirmations: ReviewConfi
   const accepted = records.find(r => r.status === "accepted");
   if (basisMatches && accepted) return JSON.parse(JSON.stringify(accepted));
   const historyStart = calendar(period); historyStart.setUTCDate(historyStart.getUTCDate() - 14);
-  const priorTargets = new Map<string, string>();
-  for (const saved of data.recommendationSnapshots ?? []) {
-    if (saved.channel === "live" && saved.localDate >= historyStart.toISOString().slice(0, 10) && saved.localDate < period) priorTargets.set(saved.localDate, saved.id);
-  }
-  const priorRecommendationIds = [...priorTargets].sort(([a], [b]) => a.localeCompare(b)).map(([, id]) => id);
-  const rawInput = snapshotJson({ priorRecommendationIds, ruleVersion: WEEKLY_RULE_VERSION, dailyRuleVersion: DAILY_V2_RULE_VERSION, asOfDate: context.localDate, timeZone: context.timeZone, periodStart: period,
+  const priorTargets = (data.recommendationSnapshots ?? []).filter(saved =>
+    saved.localDate >= historyStart.toISOString().slice(0, 10) && saved.localDate < period && saved.result.status === "ready" && saved.result.targets !== null);
+  const priorRecommendationIds = priorTargets.map(saved => saved.id);
+  const priorRecommendationDays = new Set(priorTargets.map(saved => saved.localDate)).size;
+  const priorRecommendationSources = priorTargets.map(saved => ({ id: saved.id, localDate: saved.localDate, channel: saved.channel, ruleVersion: saved.ruleVersion }));
+  const rawInput = snapshotJson({ priorRecommendationIds, priorRecommendationDays, priorRecommendationSources, ruleVersion: WEEKLY_RULE_VERSION, dailyRuleVersion: DAILY_V2_RULE_VERSION, asOfDate: context.localDate, timeZone: context.timeZone, periodStart: period,
     profile: data.profile, trainingPlan: data.trainingPlan, weightEntries: data.weightEntries,
     settings: state.settings, settingsRevision: state.settingsRevision, basis: state.basis, confirmations });
   const last = records[records.length - 1];
@@ -96,7 +96,7 @@ export function calculateWeeklyReview(data: PeakData, confirmations: ReviewConfi
   const record: WeeklyReviewRecord = { id, reviewKey: key, periodStart: period, baselineRevision: state.basis.baselineRevision,
     ruleVersion: WEEKLY_RULE_VERSION, revision, previousRevisionId: same ? last.previousRevisionId : last?.id ?? null,
     createdAt: same ? last.createdAt : context.generatedAt, status: "review-needed", oldOffsetKcal: state.basis.offsetKcal,
-    proposedOffsetKcal: null, input: rawInput, result: { reasons: [], dataQualityFlags: ["manual-confirmations-only", "actual-intake-and-activity-not-imported", ...(priorTargets.size < 14 ? ["prior-target-history-incomplete"] : [])] } };
+    proposedOffsetKcal: null, input: rawInput, result: { reasons: [], dataQualityFlags: ["manual-confirmations-only", "actual-intake-and-activity-not-imported", "followed-target-source-not-verified", ...(priorRecommendationDays < 14 ? ["prior-target-history-incomplete"] : [])] } };
   const reasons: StoredJsonObject[] = [];
   record.result.reasons = reasons;
   const stop = (status: WeeklyReviewRecord["status"], code: string, values: StoredJsonObject = {}) => {

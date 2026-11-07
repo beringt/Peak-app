@@ -167,3 +167,54 @@ Fase 1 kan afsluttes, når native checklisten er gennemført, pilotperioden er
 observeret, og der ikke er kendte datatabsfejl. Ikke gennemførte tests og
 begrænsninger skal stå eksplicit; en JS-bundle er ikke en kompileret iOS-app,
 og Safari-kørsel er ikke native verifikation.
+
+## Phase 2 / #45 — optional Experimental Today pilot (not yet observed)
+
+Status: code/browser checks do not complete #45. No physical iPhone result for
+this new flow or new personal pilot is claimed here. Earlier owner-reported v1
+checks above remain separate. Keep #45 open until observed use and any defects
+are resolved.
+
+Record before testing: exact iPhone model, full iOS version, Expo Go version,
+app commit (`git rev-parse HEAD` in Codespaces), date/time zone and test outcome.
+The owner previously reported iOS 27 and Expo Go 58.0.5; model/full OS/build and
+new-flow checks remain unconfirmed.
+
+- [ ] Launch/relaunch: Existing Today is the default; Experimental Today is opt-in.
+- [ ] Open Experimental Today without complete settings: targets are held, with
+  clear Profile/Training/Weekly Review actions and an explicit existing-model fallback.
+- [ ] Select manual maintenance in Weekly Review, clarify training composition,
+  and verify the exact chosen value is retained even above an equation estimate.
+- [ ] Save Profile/Training/Weight changes; drafts do not alter targets. A changed
+  baseline/goal holds the experimental result until the context is reconfirmed.
+- [ ] Verify all saved sessions, unknown duration/intensity, explicit rest, goal,
+  training and accepted-weekly contributions, rounding, and rounded display macros.
+- [ ] Missing/stale/noisy weight evidence is explained; there is no invented
+  confidence or assertion that weight proves adherence/causation.
+- [ ] With sufficient real history, evaluate a weekly proposal, then accept or
+  decline explicitly. The accepted offset changes only the experimental view,
+  once; repeated visits/restart/retry do not compound it.
+- [ ] Set/unset energy and macro locks; infeasible combinations hold new targets
+  and provide a route to edit them. No locked value is silently replaced.
+- [ ] Read a saved earlier experimental revision: original date/inputs/targets
+  remain, clearly labelled as historical. Return to the current result.
+- [ ] Close Expo Go fully; reopen: sources/history/settings remain, mode returns
+  to Existing Today. Opt in again without duplicate revisions for unchanged input.
+- [ ] Day rollover/background resume: capture only the new current day; old records
+  remain intact. Check local date/time zone and plan/evidence cutoff labels.
+- [ ] Export to Arkiver and inspect both live/experimental records, inputs/reasons,
+  weekly decisions and version. Exercise reset only with fictitious test data:
+  no history or experimental record may reappear after reset/restart.
+- [ ] Check keyboard access, long explanations, all action buttons, scrolling,
+  notch/safe areas and readable text sizes on the physical phone.
+
+Personal pilot: use the optional view alongside the existing one for at least two
+weeks. Record actual dates, chosen baseline definition, available weight coverage,
+planned versus completed training, which model or external targets were followed, and observed
+problems. Do not infer that the nutrition rules are validated by a successful UI
+check. Actual activity/intake integrations are still unavailable; self-reports
+remain limited evidence. Log reproducible defects in #45 or linked focused issues.
+
+Completion requires recorded physical checks, observed pilot use and resolution
+of known data-loss/calculation defects. It is not implied by a merged PR, passing
+unit/browser tests or an iOS JavaScript bundle.

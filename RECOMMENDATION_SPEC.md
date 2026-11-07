@@ -1,6 +1,6 @@
 # Peak recommendations v2 — review draft
 
-Status: specification for issue #38, not active app behavior. Product principles
+Status: experimental rules for issue #38, now available in an optional Today test view; Existing Today remains legacy-v1. Product principles
 were approved by the owner on 7 November 2026 (section 10.1). Numerical defaults
 and unresolved domain decisions in section 10 still require review before their
 dependent implementation.
@@ -469,8 +469,8 @@ as validation of the complete combined Peak model.
 ## Inactive #42 engine contract
 
 `calculateDailyTargetsV2` and its exported input/result types live in
-`src/features/recommendation`. There is no UI/persistence wiring and no storage
-migration. The caller supplies the local as-of date (through 9999-12-30 to keep
+`src/features/recommendation`. At #42 this module had no UI/persistence wiring or storage migration;
+#43/#45 add capture and an optional stored-result view, without replacing Existing Today. The caller supplies the local as-of date (through 9999-12-30 to keep
 tomorrow representable), time-zone label, profile/input revisions, explicit
 baseline selection with source/revision/training composition, saved plan, optional
 locks, and optional previously accepted weekly decision. The time-zone label is
@@ -524,7 +524,7 @@ output, reasons/legacy-quality labels and version, using caller-supplied date,
 time zone and generation time. Current-day changes append linked revisions;
 prior-day entries are retained unchanged. Unchanged input/version/time zone
 reuses the latest record, and reading history never replays a calculator.
-Experimental v2 capture uses a separate channel and does not activate Today.
+Experimental v2 capture uses a separate channel and does not replace Existing Today.
 
 No old history is invented when v1–v3 storage migrates to schema 4. After a valid
 load the app may capture only the current local day. Source commits and their
@@ -556,3 +556,41 @@ is a reviewed test guard, not proof of a generally safe intake.
 Only the experimental preview consumes these offsets. Today remains v1, and UI
 labels distinguish experimental acceptance from a saved live recommendation.
 See LOCAL_DATA.md for precise eligibility, persistence, reset and retry behavior.
+
+## Optional Today integration (#45)
+
+The owner approved a voluntary Experimental Today alongside Existing Today, with
+Existing Today retained as the launch/restart default. No global/default v2
+activation is implied. Opt-in is local session state, not a new persisted
+preference. The separate experimental stream is captured only while opted in
+and a profile exists; reset returns to Existing Today without recreating history.
+
+Each source commit captures live v1 first, then a matching experimental record in
+the same payload. The latter includes raw weights, versioned observed weight
+evidence, saved review settings, baseline-confirmation state and the explicit v2
+request/result. Current source/settings/date/time-zone mismatches hold old targets
+until a matching snapshot exists. Baseline/profile changes cannot reuse a stale
+weekly offset. Explanation text derives from stored reason codes and values;
+it does not make causal claims or invent confidence scores.
+
+Existing and experimental targets remain labelled separately. Missing/unsupported
+inputs and conflicts hold v2 targets and provide routes to Profile, Training,
+Weight, Weekly Review and the existing calculation. Baseline, goal, exercise,
+weekly and rounding terms, saved sessions, locks and preparation holds are
+explained. Observed weight evidence does not automatically change targets; weekly
+acceptance remains a separate action. Accepted decision IDs identify the exact
+saved review, rather than implying a new adjustment on each visit.
+
+Historical records are read from their original payload, never re-evaluated.
+The last five experimental entries can be selected in Today; full history remains
+in Export Data. Older formats without display evidence remain preserved, and
+unsupported explanatory formats are held rather than silently reconstructed.
+Available prior target references for a weekly review now retain both streams
+and revisions, counting distinct dates; their existence does not establish which
+model or external targets a person followed. Past accepted reviews are unchanged.
+
+The implementation uses existing schema-5 extensible snapshot/review payloads;
+there is no new storage version or nutrition formula. #45 remains open pending
+recorded physical iPhone checks and a new observed personal pilot, as specified
+in IPHONE_PILOT.md. Passing code/browser tests or merging this UI is not phase
+completion or validation of individual nutritional outcomes.
