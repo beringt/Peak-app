@@ -12,7 +12,7 @@ const source = (): PeakData => ({ profile: { weight: 80, goal: "maintain", activ
   weightEntries: [{ id: "original", date: "2026-11-15", weightKg: 80 }] });
 const tick = () => new Promise<void>(resolve => setImmediate(resolve));
 
-test.each([1, 2, 3])("v%s migrates without invented history or eager writes; explicit capture writes v4", async version => {
+test.each([1, 2, 3, 4])("v%s migrates without invented history or eager writes; explicit capture writes v5", async version => {
   let raw: string | null = JSON.stringify({ version, data: source() });
   const original = raw;
   const storage = { read: jest.fn(async () => raw), write: jest.fn(async (next: string) => { raw = next; }), remove: jest.fn(async () => { raw = null; }) };
@@ -21,7 +21,7 @@ test.each([1, 2, 3])("v%s migrates without invented history or eager writes; exp
   expect(app.getSnapshot().data.recommendationSnapshots).toBeUndefined();
   app.update(data => captureLegacyRecommendation(data, context)); await tick();
   expect(app.getSnapshot().saveStatus).toBe("saved");
-  expect(JSON.parse(raw!).version).toBe(4);
+  expect(JSON.parse(raw!).version).toBe(5);
   const reload = createLocalPersistence(storage); await reload.load();
   const data = reload.getSnapshot().data;
   expect(data.recommendationSnapshots).toHaveLength(1);

@@ -1,8 +1,8 @@
-# Local data contract (version 4)
+# Local data contract (version 5)
 
 The app loads and saves this format through AsyncStorage at `@peak/local-data`.
 
-The JSON envelope is `{ version: 4, data: { profile, trainingPlan, weightEntries } }`.
+The JSON envelope is `{ version: 5, data: { profile, trainingPlan, weightEntries } }`.
 Use the existing profile and entry field names from `src/types/index.ts`.
 An empty installation is represented by a null profile and two empty arrays.
 Arrays preserve their order and every record; decoding never sorts, repairs,
@@ -19,10 +19,11 @@ rule consistently is part of #22, not an implicit migration in this issue.
 ## Explicit decoding and encoding outcomes
 
 - Only a missing storage key (`read()` returns null) yields `missing`.
-- A complete version-1 payload migrates in memory to version 4 and yields `valid`.
-- A complete version-2 payload migrates in memory to version 4 and yields `valid`.
-- A complete version-3 payload migrates in memory to version 4 and yields `valid`.
-- A complete version-4 payload yields `valid`.
+- A complete version-1 payload migrates in memory to version 5 and yields `valid`.
+- A complete version-2 payload migrates in memory to version 5 and yields `valid`.
+- A complete version-3 payload migrates in memory to version 5 and yields `valid`.
+- A complete version-4 payload migrates in memory to version 5 and yields `valid`.
+- A complete version-5 payload yields `valid`.
 - Malformed JSON yields `invalid` with reason `json`.
 - Missing fields, unknown fields, invalid values, duplicate identities, or invalid
   version metadata yield `invalid` with reason `schema`.
@@ -34,11 +35,11 @@ rule consistently is part of #22, not an implicit migration in this issue.
   silently become JSON null. Invalid input yields `invalid` instead of a payload.
 
 Version 1 retains its original strict three-field profile schema. Migration to
-version 4 retains that profile, all plan dates, weight IDs, order and values
+version 5 retains that profile, all plan dates, weight IDs, order and values
 without guessing new inputs. Absent `baselineInputs` (or null) means all optional
 inputs are unknown. No eager write occurs on load: the original version-1 string
 remains until a later validated user save succeeds. Failed validation blocks edits
-and preserves the original raw data. Successful saves and exports use version 4.
+and preserves the original raw data. Successful saves and exports use version 5.
 
 Version 2 additionally accepts optional profile `baselineInputs`, either null or
 an exact object with `heightCm`, `ageYears`, `equationVariant`,
@@ -281,3 +282,74 @@ their original input and result, including measurements later edited/deleted.
 Export contains all snapshots; confirmed reset removes all of them. The Data
 screen explains this retention. Local history grows with use; storage capacity
 errors follow the same visible/retryable write-failure path.
+
+## Controlled weekly review (version 5, #44)
+
+Version 5 adds optional `weeklyReview`: settings, settingsRevision, an active
+baseline context, and append-only decision records. Strict v1–v4 payloads migrate
+without invented settings, offsets or decisions. The existing source records and
+recommendation snapshots are preserved. Review settings/records are included in
+export and removed by confirmed reset. Their original measurement inputs remain
+in history after source edits/deletion, as explained in Data.
+
+The separate Weekly Review (Experimental) screen is opt-in. Save settings before
+evaluating; drafts do not affect previews or stored records. Users explicitly
+select manual maintenance or the equation, clarify that the baseline excludes
+planned training, and may select non-training activity, a user-reviewed test
+lower bound and target locks. This lower bound is not asserted to be clinically
+safe. Manual maintenance comes from Profile and is never replaced by Mifflin.
+Unknown inputs remain unknown; incomplete or infeasible daily targets hold a
+review. The existing Today calculator stays legacy-v1.
+
+Each review uses the most recent local Monday D as fixed evidence cutoff, even
+when opened later in the week. Windows are D−14..D−8 and D−7..D−1, using #41's
+coverage/freshness/quality rules. In addition, the oldest measurement before D
+must fall on or before D−14 (14 elapsed days of recorded history). Current/future
+readings cannot fill missing dates. Known prior live recommendation IDs in that
+window are retained; missing target records are flagged, not reconstructed.
+Numeric proposals require explicit per-period confirmations of reliable weights
+and reasonable adherence. These are self-reports; actual activity/intake is not
+imported and weight does not prove adherence or explain a discrepancy.
+
+The signed target uses the saved rate magnitude; blank defaults to −0.25% W/week
+for loss, +0.125% W/week for gain, and 0 for maintenance. Explicit zero is retained.
+Tolerance is max(0.05, 0.0005W) kg/week; only representation noise propagated from
+the window means/centres is tolerated at its boundary. Step sizes are 2.5%/5%/7.5%
+of B capped at 100/150/200 kcal/day, rounded to tens. The cumulative offset cap is
+10% B rounded down to tens. Compare observed−target: above tolerance proposes a
+decrease, below proposes an increase, otherwise no change. The new offset is an
+absolute value clamped within the cumulative cap, never another daily side effect.
+
+Energy locks hold weekly changes. The proposed offset must also produce feasible
+v2 macro/energy targets under the saved locks. Reductions require a known lower
+guard: the equation's provisional REE and/or an explicitly reviewed test minimum.
+Manual mode does not silently compute a substitute REE. The guard applies to
+rounded non-training goal energy plus proposed offset, so today's workout cannot
+disguise a rest-day target below it. A known minimum also blocks any proposal
+remaining below it. These guards do not establish nutritional adequacy.
+
+Review identity contains Monday, baseline revision, weekly rule version and daily
+rule version. Before acceptance, changed inputs create a linked proposal revision;
+unchanged inputs/version/context reuse the existing revision and generation time.
+Acceptance rechecks exact current inputs and result, including date, settings,
+confirmations and source records, and rejects a stale preview. Accepted decisions
+are terminal for that identity, including after mode changes, restart, repeated
+clicks and retries. Decline preserves the offset and is idempotent. Explicit
+re-evaluation may reconsider a declined proposal; no automatic decision occurs.
+
+An accepted decision and its absolute offset/decision ID are written in the same
+full payload. A failed write keeps the previous stored state and the pending
+revision in memory; Retry saving writes it without creating another decision.
+The persistence boundary rejects removed/rewritten records, unlinked offsets and
+invalid context transitions. Confirmed reset is the deletion path. Baseline or
+goal changes hold previews until settings are saved with explicit offset-reset
+confirmation when a decision has been accepted; an unfinished zero-offset setup
+can be revised by saving settings. A new baseline revision starts at zero and retains all prior records.
+Mode/lock changes do not grant another adjustment in an accepted period.
+
+The UI labels stored/candidate/experimental values and their effective preview
+date separately from Today. Period confirmations reset on a new Monday or changed
+profile/measurements, and are never carried as a global assertion. Accepted
+experimental offsets feed only the experimental daily preview; there is no
+background scheduler or live v2 activation. UI/runtime eligibility is still a
+prototype using provisional nutrition rules, not validated causal calibration.

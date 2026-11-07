@@ -99,3 +99,8 @@ export function appendRecommendationSnapshot(history: readonly RecommendationSna
   if (!validRecommendationSnapshots(next)) throw new RangeError("Invalid recommendation snapshot.");
   return next;
 }
+
+
+/** Stable structural comparison for JSON input/version records. */
+export const canonicalSnapshotJson = canonical;
+export const validStoredJsonObject = (value: unknown): value is StoredJsonObject => record(value) && json(value);
