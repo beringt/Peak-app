@@ -217,3 +217,101 @@ test("a new app instance restores previously committed data", async () => {
   await second.load();
   expect(second.getSnapshot().data).toEqual(data());
 });
+
+test("reset waits for a pending write, discards queued saves and cannot resurrect data", async () => {
+  let stored: string | null = raw(data());
+  const pending = deferred<void>();
+  const storage = storageMock();
+  storage.read.mockImplementation(async () => stored);
+  storage.write.mockImplementation(async (value) => { await pending.promise; stored = value; });
+  storage.remove.mockImplementation(async () => { stored = null; });
+  const app = createLocalPersistence(storage);
+  await app.load();
+  app.update(() => data(81));
+  app.update(() => data(82));
+  const reset = app.reset();
+  app.update(() => data(83));
+  app.retrySave();
+  expect(app.getSnapshot().phase).toBe("resetting");
+  expect(storage.remove).not.toHaveBeenCalled();
+  pending.resolve();
+  expect(await reset).toBe(true);
+  await settle();
+  expect(storage.write).toHaveBeenCalledTimes(1);
+  expect(storage.remove).toHaveBeenCalledTimes(1);
+  expect(stored).toBeNull();
+  expect(app.getSnapshot().data).toEqual({ profile: null, trainingPlan: [], weightEntries: [] });
+  const restarted = createLocalPersistence(storage);
+  await restarted.load();
+  expect(restarted.getSnapshot().data).toEqual(app.getSnapshot().data);
+  app.update(() => data(85));
+  await settle();
+  expect(stored).toBe(raw(data(85)));
+});
+
+test("reset can drain a failed write before deleting and blocks retry writes", async () => {
+  const storage = storageMock();
+  const pending = deferred<void>();
+  storage.write.mockReturnValueOnce(pending.promise);
+  const app = createLocalPersistence(storage);
+  await app.load();
+  app.update(() => data());
+  const reset = app.reset();
+  pending.reject(new Error("write failed"));
+  expect(await reset).toBe(true);
+  app.retrySave();
+  expect(storage.write).toHaveBeenCalledTimes(1);
+  expect(app.getSnapshot().phase).toBe("ready");
+  expect(app.getSnapshot().saveError).toBeNull();
+});
+
+test("deletion failure retains session data, blocks edits and can retry safely", async () => {
+  const storage = storageMock();
+  storage.read.mockResolvedValue(raw(data()));
+  storage.remove.mockRejectedValueOnce(new Error("remove failed"));
+  const app = createLocalPersistence(storage);
+  await app.load();
+  expect(await app.reset()).toBe(false);
+  expect(app.getSnapshot().phase).toBe("reset-error");
+  expect(app.getSnapshot().data).toEqual(data());
+  app.update(() => data(90));
+  app.retrySave();
+  await app.load();
+  expect(storage.write).not.toHaveBeenCalled();
+  expect(app.getSnapshot().data).toEqual(data());
+  expect(await app.reset()).toBe(true);
+  expect(app.getSnapshot().phase).toBe("ready");
+  expect(app.getSnapshot().data.profile).toBeNull();
+});
+
+test("a late hydration result cannot repopulate an explicitly reset app", async () => {
+  const storage = storageMock();
+  const read = deferred<string | null>();
+  storage.read.mockReturnValueOnce(read.promise);
+  const app = createLocalPersistence(storage);
+  const load = app.load();
+  await settle();
+  expect(await app.reset()).toBe(true);
+  read.resolve(raw(data()));
+  await load;
+  expect(app.getSnapshot().phase).toBe("ready");
+  expect(app.getSnapshot().data.profile).toBeNull();
+  expect(storage.write).not.toHaveBeenCalled();
+});
+
+test("reset shares concurrent calls and clears even unsupported saved data explicitly", async () => {
+  const storage = storageMock();
+  storage.read.mockResolvedValue('{"version":99,"future":"keep"}');
+  const pending = deferred<void>();
+  storage.remove.mockReturnValueOnce(pending.promise);
+  const app = createLocalPersistence(storage);
+  await app.load();
+  expect(app.getSnapshot().phase).toBe("unsupported-version");
+  const first = app.reset();
+  const second = app.reset();
+  expect(first).toBe(second);
+  pending.resolve();
+  expect(await first).toBe(true);
+  expect(storage.remove).toHaveBeenCalledTimes(1);
+  expect(app.getSnapshot().data.profile).toBeNull();
+});
