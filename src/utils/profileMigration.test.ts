@@ -14,9 +14,9 @@ const tick = () => new Promise<void>(resolve => setImmediate(resolve));
 
 test("migrates a v1 fixture purely, preserving IDs/order, profile and unknown optional inputs", () => {
   const raw = JSON.stringify({ version: 1, data: legacy });
-  expect(decodePersistedData(raw)).toEqual({ status: "valid", value: { version: 3, data: legacy } });
+  expect(decodePersistedData(raw)).toEqual({ status: "valid", value: { version: 4, data: legacy } });
   expect(JSON.parse(raw).version).toBe(1);
-  expect(decodePersistedData(JSON.stringify({ version: 1, data: { profile: null, trainingPlan: [], weightEntries: [] } }))).toMatchObject({ status: "valid", value: { version: 3 } });
+  expect(decodePersistedData(JSON.stringify({ version: 1, data: { profile: null, trainingPlan: [], weightEntries: [] } }))).toMatchObject({ status: "valid", value: { version: 4 } });
 });
 
 test("loads v1 without rewriting the original; explicit save writes current schema; reload/export/reset include new fields", async () => {
@@ -29,7 +29,7 @@ test("loads v1 without rewriting the original; explicit save writes current sche
   expect(storage.write).not.toHaveBeenCalled();
   app.update(data => ({ ...data, profile: { ...data.profile!, baselineInputs: inputs } }));
   await tick();
-  expect(JSON.parse(raw!).version).toBe(3);
+  expect(JSON.parse(raw!).version).toBe(4);
   const reload = createLocalPersistence(storage);
   await reload.load();
   const data = reload.getSnapshot().data;
@@ -93,5 +93,5 @@ test("failed first current-schema write retains original v1 data; retry persists
   app.retrySave();
   await tick();
   expect(app.getSnapshot().saveStatus).toBe("saved");
-  expect(decodePersistedData(stored)).toMatchObject({ status: "valid", value: { version: 3, data: { profile: { baselineInputs: inputs } } } });
+  expect(decodePersistedData(stored)).toMatchObject({ status: "valid", value: { version: 4, data: { profile: { baselineInputs: inputs } } } });
 });

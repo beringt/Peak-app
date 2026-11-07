@@ -1,5 +1,7 @@
 import type { PeakData } from "../types";
 import { decodePersistedData, encodePersistedData } from "./persistedData";
+import { recommendationHistoryHasPrefix } from "./recommendationSnapshots";
+import type { RecommendationSnapshot } from "../types";
 import type { PeakStorage } from "./persistedData";
 
 type Phase = "loading" | "ready" | "read-error" | "invalid-data" | "unsupported-version" | "resetting" | "reset-error";
@@ -83,7 +85,17 @@ export function createLocalPersistence(storage: PeakStorage) {
 
   function update(change: (current: PeakData) => PeakData) {
     if (snapshot.phase !== "ready") return;
+    const previousHistory: RecommendationSnapshot[] = JSON.parse(JSON.stringify(snapshot.data.recommendationSnapshots ?? []));
     const data = change(snapshot.data);
+    if (previousHistory.length && !recommendationHistoryHasPrefix(previousHistory, data.recommendationSnapshots ?? [])) {
+      // Only confirmed reset may remove history. Also protect against a callback
+      // accidentally mutating an existing record by restoring the detached copy.
+      revision += 1;
+      latestRaw = null;
+      publish({ data: { ...snapshot.data, recommendationSnapshots: previousHistory }, saveStatus: "error", saveError: "validation" });
+      return;
+    }
+    if (data === snapshot.data) return;
     const encoded = encodePersistedData(data);
     revision += 1;
     latestRaw = encoded.status === "valid" ? encoded.raw : null;

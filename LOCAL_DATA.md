@@ -1,8 +1,8 @@
-# Local data contract (version 3)
+# Local data contract (version 4)
 
 The app loads and saves this format through AsyncStorage at `@peak/local-data`.
 
-The JSON envelope is `{ version: 3, data: { profile, trainingPlan, weightEntries } }`.
+The JSON envelope is `{ version: 4, data: { profile, trainingPlan, weightEntries } }`.
 Use the existing profile and entry field names from `src/types/index.ts`.
 An empty installation is represented by a null profile and two empty arrays.
 Arrays preserve their order and every record; decoding never sorts, repairs,
@@ -19,9 +19,10 @@ rule consistently is part of #22, not an implicit migration in this issue.
 ## Explicit decoding and encoding outcomes
 
 - Only a missing storage key (`read()` returns null) yields `missing`.
-- A complete version-1 payload migrates in memory to version 3 and yields `valid`.
-- A complete version-2 payload migrates in memory to version 3 and yields `valid`.
-- A complete version-3 payload yields `valid`.
+- A complete version-1 payload migrates in memory to version 4 and yields `valid`.
+- A complete version-2 payload migrates in memory to version 4 and yields `valid`.
+- A complete version-3 payload migrates in memory to version 4 and yields `valid`.
+- A complete version-4 payload yields `valid`.
 - Malformed JSON yields `invalid` with reason `json`.
 - Missing fields, unknown fields, invalid values, duplicate identities, or invalid
   version metadata yield `invalid` with reason `schema`.
@@ -33,11 +34,11 @@ rule consistently is part of #22, not an implicit migration in this issue.
   silently become JSON null. Invalid input yields `invalid` instead of a payload.
 
 Version 1 retains its original strict three-field profile schema. Migration to
-version 3 retains that profile, all plan dates, weight IDs, order and values
+version 4 retains that profile, all plan dates, weight IDs, order and values
 without guessing new inputs. Absent `baselineInputs` (or null) means all optional
 inputs are unknown. No eager write occurs on load: the original version-1 string
 remains until a later validated user save succeeds. Failed validation blocks edits
-and preserves the original raw data. Successful saves and exports use version 3.
+and preserves the original raw data. Successful saves and exports use version 4.
 
 Version 2 additionally accepts optional profile `baselineInputs`, either null or
 an exact object with `heightCm`, `ageYears`, `equationVariant`,
@@ -195,7 +196,7 @@ for this pilot; this is not account deletion or a claim of full GDPR compliance.
 
 `calculateWeightEvidence(entries, asOfDate)` is a pure, version-tagged helper
 (`weight-evidence-v1`). It does not write storage or create/change recommendation
-history. Measurement records and schema version 3 are unchanged. The as-of date
+history. Measurement records are unchanged; the later snapshot schema is described below. The as-of date
 must be valid and at least 0001-01-15 so both completed windows are representable;
 invalid dates or invalid/duplicate measurements throw RangeError. The app passes
 its current local-day key, refreshed by the existing day clock.
@@ -224,3 +225,59 @@ numeric rates when evidence is not ready. Today still uses its existing legacy
 endpoint-based calculation (including its existing adjustment). Wiring the new
 evidence into recommendations and weekly decisions belongs to #42/#44; #41 does
 not alter calorie targets or retrospectively reinterpret recommendations.
+
+## Recommendation snapshots (version 4, #43)
+
+Version 4 adds optional `recommendationSnapshots` at the data root. Absent means
+no captured history. V1–v3 strict schemas remain supported and never fabricate
+past results or missed days. Storage hydration itself still does not write. After
+hydration, the app explicitly captures the current local day's live recommendation
+when a profile exists; this is a separate, validated v4 write, not a migration
+rewrite. It can fail/retry through the existing device save status.
+
+A snapshot has an opaque unique ID, localDate, channel (live/experimental),
+positive per-date/channel revision, previousRevisionId, generatedAt (canonical UTC
+ISO timestamp), timeZone, ruleVersion, input and result. Arrays retain creation
+order. A chain begins at revision 1 with null predecessor; later revisions must
+link to the immediately preceding record in that date/channel. No pruning or
+backfilling is performed. IDs are not parsed to determine chronological order.
+
+The input/result are detached finite JSON objects, retained exactly rather than
+validated by re-running a current calculator. JSON nesting is bounded at 64.
+Envelope validation checks context/version agreement, known result status,
+canonical target field types, reasons/quality arrays, unique IDs and revision
+links. Rule-version tags may be older/unknown while the envelope contract remains
+compatible. Opaque payload fields are intentionally extensible and never dropped.
+Structural validity is not proof of nutritional correctness. A past read returns
+a detached stored copy; it never invokes v1/v2 or silently updates old values.
+
+Live v1 input includes the explicit date/time-zone context and the complete raw
+profile/plan/weights (not recursively embedded recommendation history). Its
+result retains exact v1 targets, the original recommendation text, structured
+legacy reasons with measurement IDs and explicit legacy data-quality labels.
+This records current behavior, including the existing endpoint-based adjustment;
+it does not activate the experimental v2 engine. Experimental v2 snapshots store
+the complete explicit engine request/result in a separate channel. The helper is
+available for later use but the app does not automatically generate v2 previews.
+
+Current means the latest revision for a date and channel; earlier array entries
+are historical revisions, never overwritten. Equality compares the latest
+input structurally (object keys canonicalized, array order preserved), time zone
+and rule version, excluding generatedAt. Unchanged captures do not calculate,
+append or write. A→B→A produces three revisions; a rule change produces another
+revision rather than rewriting history. Snapshot metadata/inputs use caller
+context; pure helpers read no current clock. The app supplies its current clock
+and local-day rollover/resume events.
+
+Source edits and their new live snapshot are sent together in one storage update.
+Save failures leave the previous stored payload intact, retain pending source and
+history in memory, and expose Retry saving. Retry reuses that same revision/ID;
+it does not capture another result. No-op updates do not clear an existing error.
+Ordinary updates must retain the complete existing history prefix; attempts to
+drop/rewrite records are rejected with a visible validation error. Confirmed reset
+is the explicit removal path. App opening/day rollover can capture a new day's current result, while changing
+profile/plan/weights captures only the current day. Prior-day snapshots retain
+their original input and result, including measurements later edited/deleted.
+Export contains all snapshots; confirmed reset removes all of them. The Data
+screen explains this retention. Local history grows with use; storage capacity
+errors follow the same visible/retryable write-failure path.

@@ -37,7 +37,7 @@ export function DataScreen({ data, exportAllowed, resetting, onReset }: DataScre
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Your Data</Text>
       <View style={styles.card}>
-        <Text style={styles.text}>Export your saved profile, training history and weight measurements as a JSON file.</Text>
+        <Text style={styles.text}>Export your saved profile, training history, weight measurements and recommendation history as a JSON file.</Text>
         <Text style={styles.text}>Peak does not upload this file. You choose where to save or share it.</Text>
         <Button title={exporting ? "Exporting…" : "Export Data"} disabled={!exportAllowed || exporting || resetting} onPress={exportData} />
         {!exportAllowed && !resetting ? <Text style={styles.text}>Export is available after your data has loaded and all changes are saved.</Text> : null}
@@ -45,7 +45,8 @@ export function DataScreen({ data, exportAllowed, resetting, onReset }: DataScre
         {error ? <Text accessibilityRole="alert" style={styles.text}>{error}</Text> : null}
       </View>
       <View style={styles.card}>
-        <Text style={styles.text}>Reset removes your profile, training history and weights from this app on this device. Exported files and data in other browsers or devices are not removed.</Text>
+        <Text style={styles.text}>Recommendation history retains the original inputs and results, including measurements you later edit or delete. Reset removes this history too.</Text>
+        <Text style={styles.text}>Reset removes your profile, training history, weights and recommendation history from this app on this device. Exported files and data in other browsers or devices are not removed.</Text>
         {resetting ? <Text accessibilityLiveRegion="polite">Resetting data. Keep the app open…</Text> : confirming ? (
           <View>
             <Text accessibilityRole="alert" style={styles.text}>Permanently remove all Peak data from this device?</Text>
