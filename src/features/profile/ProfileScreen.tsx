@@ -55,7 +55,7 @@ export function ProfileScreen({ savedProfile, onSave, saveStatus }: ProfileScree
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Text style={styles.title}>{savedProfile ? "Edit Profile" : "Set Up Your Profile"}</Text>
       <Text style={styles.help}>
         {savedProfile

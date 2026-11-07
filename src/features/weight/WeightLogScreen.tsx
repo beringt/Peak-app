@@ -54,7 +54,7 @@ export function WeightLogScreen({ weightEntries, onAdd, onUpdate, onDelete }: We
   const trend = calculateWeightTrend(weightEntries);
 
   return (
-    <ScrollView ref={scroll} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView ref={scroll} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Text style={styles.title}>Weight Log</Text>
       <View style={styles.card}>
         <Text style={styles.heading}>{editingId === null ? "Add Measurement" : "Edit Measurement"}</Text>
