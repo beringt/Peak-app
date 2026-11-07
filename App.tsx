@@ -1,21 +1,50 @@
-import { useState } from "react";
-import { Button, SafeAreaView, StatusBar, StyleSheet, View } from "react-native";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { Button, SafeAreaView, StatusBar, StyleSheet, Text, View } from "react-native";
 
 import { ProfileScreen } from "./src/features/profile/ProfileScreen";
 import { DailyRecommendationScreen } from "./src/features/recommendation/DailyRecommendationScreen";
 import { TrainingPlanScreen } from "./src/features/training/TrainingPlanScreen";
 import { WeightLogScreen } from "./src/features/weight/WeightLogScreen";
-import type { TrainingDay, UserProfile, WeightEntry } from "./src/types";
+import { createLocalPersistence } from "./src/utils/localPersistence";
+import { deviceStorage } from "./src/utils/deviceStorage";
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<"today" | "profile" | "training" | "weight">("today");
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [trainingPlan, setTrainingPlan] = useState<TrainingDay[]>([]);
-  const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
+  const [persistence] = useState(() => createLocalPersistence(deviceStorage));
+  const saved = useSyncExternalStore(persistence.subscribe, persistence.getSnapshot, persistence.getSnapshot);
+  useEffect(() => { void persistence.load(); }, [persistence]);
+  const { profile, trainingPlan, weightEntries } = saved.data;
+
+  if (saved.phase !== "ready") {
+    const messages = {
+      loading: "Loading your saved data…",
+      "read-error": "Your saved data could not be loaded. Please try again.",
+      "invalid-data": "Your saved data could not be read. It has been kept unchanged.",
+      "unsupported-version": "Your saved data needs a different app version. It has been kept unchanged.",
+    };
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.storageNotice}>
+          <Text accessibilityLiveRegion="polite">{messages[saved.phase]}</Text>
+          {saved.phase !== "loading" ? <Button title="Retry loading" onPress={() => { void persistence.load(); }} /> : null}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      <View style={styles.storageNotice}>
+        <Text accessibilityLiveRegion="polite">
+          {saved.saveStatus === "saving" ? "Saving on this device…" :
+            saved.saveStatus === "error" ? (saved.saveError === "validation" ?
+              "Changes contain invalid data and could not be saved on this device." :
+              "Changes could not be saved on this device. Keep the app open and retry.") :
+              saved.saveStatus === "saved" ? "Saved on this device." : "Data is stored on this device only."}
+        </Text>
+        {saved.saveStatus === "error" ? <Button title="Retry saving" onPress={persistence.retrySave} /> : null}
+      </View>
       <View style={styles.buttons}>
         {(["today", "profile", "training", "weight"] as const).map((screen) => (
           <Button
@@ -33,15 +62,15 @@ export default function App() {
         />
       ) : null}
       {activeScreen === "profile" ? (
-        <ProfileScreen savedProfile={profile} onSave={setProfile} />
+        <ProfileScreen savedProfile={profile} onSave={(value) => persistence.update((data) => ({ ...data, profile: value }))} />
       ) : null}
       {activeScreen === "training" ? (
-        <TrainingPlanScreen savedPlan={trainingPlan} onSave={setTrainingPlan} />
+        <TrainingPlanScreen savedPlan={trainingPlan} onSave={(value) => persistence.update((data) => ({ ...data, trainingPlan: value }))} />
       ) : null}
       {activeScreen === "weight" ? (
         <WeightLogScreen
           weightEntries={weightEntries}
-          onAdd={(entry) => setWeightEntries((entries) => [...entries, entry])}
+          onAdd={(entry) => persistence.update((data) => ({ ...data, weightEntries: [...data.weightEntries, entry] }))}
         />
       ) : null}
     </SafeAreaView>
@@ -56,5 +85,8 @@ const styles = StyleSheet.create({
   buttons: {
     flexDirection: "row",
     justifyContent: "space-around",
+  },
+  storageNotice: {
+    padding: 12,
   },
 });
